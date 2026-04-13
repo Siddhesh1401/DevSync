@@ -42,7 +42,7 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* Features Section */}
-      <section className="features">
+      <section id="features" className="features">
         <div className="landing-container">
           <h2 className="section-title">Why DevSync?</h2>
           <div className="features-grid">
@@ -107,7 +107,7 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* FAQ Section */}
-      <section className="faq">
+      <section id="faq" className="faq">
         <div className="landing-container">
           <h2 className="section-title">Frequently Asked Questions</h2>
           <div className="faq-grid">

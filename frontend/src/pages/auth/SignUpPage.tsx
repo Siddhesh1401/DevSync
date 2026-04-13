@@ -4,6 +4,7 @@ import { AuthLayout } from '../../components/layout/AuthLayout';
 import { useAuth } from '../../hooks';
 
 export const SignUpPage: React.FC = () => {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -29,7 +30,7 @@ export const SignUpPage: React.FC = () => {
     setSuccess('');
 
     // Validation
-    if (!email || !password || !confirmPassword) {
+    if (!name || !email || !password || !confirmPassword) {
       setError('All fields are required');
       return;
     }
@@ -52,12 +53,13 @@ export const SignUpPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      await signUp(email, password);
+      await signUp(email, password, name);
       setSuccess(
         isMockAuth
           ? 'Sign up successful in local dev mode. Redirecting to dashboard...'
           : 'Sign up successful! Please check your email for verification link.'
       );
+      setName('');
       setEmail('');
       setPassword('');
       setConfirmPassword('');
@@ -91,6 +93,19 @@ export const SignUpPage: React.FC = () => {
       <form className="auth-form" onSubmit={handleSignUp}>
         {error && <div className="error-message">{error}</div>}
         {success && <div className="success-message">{success}</div>}
+
+        <div className="form-group">
+          <label htmlFor="name">Full Name</label>
+          <input
+            id="name"
+            type="text"
+            placeholder="Your full name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            disabled={isLoading}
+            required
+          />
+        </div>
 
         <div className="form-group">
           <label htmlFor="email">Email Address</label>

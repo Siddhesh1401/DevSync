@@ -87,12 +87,12 @@ router.put('/me', extractUser, async (req: AuthRequest, res: Response) => {
     const { full_name, github_username, avatar_url } = req.body;
 
     // Upsert profile (insert if doesn't exist, update if does)
+    // Note: profiles table has no email column — email lives in auth.users
     const { data, error } = await supabase
       .from('profiles')
       .upsert(
         {
           id: req.user.id,
-          email: req.user.email,
           full_name: full_name || undefined,
           github_username: github_username || undefined,
           avatar_url: avatar_url || undefined,
