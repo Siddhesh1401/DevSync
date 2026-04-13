@@ -1,0 +1,34 @@
+{
+  "name": "devsync-backend",
+  "version": "1.0.0",
+  "description": "DevSync Backend API Server",
+  "main": "dist/app.js",
+  "scripts": {
+    "dev": "nodemon --watch src --ext ts --exec ts-node src/app.ts",
+    "build": "tsc",
+    "start": "node dist/app.js",
+    "lint": "eslint src/**/*.ts"
+  },
+  "keywords": ["devsync", "api"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.4",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^5.1.0",
+    "nodemailer": "^6.10.1"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.1",
+    "@types/node": "^22.14.0",
+    "@types/nodemailer": "^6.4.17",
+    "@typescript-eslint/eslint-plugin": "^8.29.1",
+    "@typescript-eslint/parser": "^8.29.1",
+    "eslint": "^9.24.0",
+    "nodemon": "^3.1.9",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}

@@ -1,0 +1,261 @@
+.cs-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-base);
+  overflow: hidden;
+}
+
+.cs-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: var(--space-16) 0;
+}
+
+/* ─── Background Decorations ─── */
+.cs-bg-blob {
+  position: absolute;
+  border-radius: var(--radius-full);
+  filter: blur(80px);
+  opacity: 0.15;
+  pointer-events: none;
+}
+
+.cs-bg-blob--1 {
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, #818cf8, #6366f1);
+  top: -100px;
+  right: -100px;
+}
+
+.cs-bg-blob--2 {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, #a78bfa, #8b5cf6);
+  bottom: -50px;
+  left: -80px;
+}
+
+.cs-bg-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--border-default) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border-default) 1px, transparent 1px);
+  background-size: 40px 40px;
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* ─── Content ─── */
+.cs-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-8);
+  max-width: 720px;
+}
+
+/* ─── Badge ─── */
+.cs-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-primary-50);
+  border: 1px solid var(--color-primary-200);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--color-primary-700);
+}
+
+@media (prefers-color-scheme: dark) {
+  .cs-badge {
+    background: rgba(99, 102, 241, 0.15);
+    border-color: rgba(99, 102, 241, 0.3);
+    color: var(--color-primary-300);
+  }
+}
+
+.cs-badge__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary-500);
+  animation: pulse-glow 2s infinite;
+}
+
+/* ─── Title ─── */
+.cs-title {
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: var(--font-extrabold);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+}
+
+.cs-title--gradient {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Subtitle ─── */
+.cs-subtitle {
+  font-size: var(--text-lg);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+  max-width: 580px;
+}
+
+/* ─── Feature Pills ─── */
+.cs-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  justify-content: center;
+}
+
+.cs-feature-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  font-weight: var(--font-medium);
+  transition: all var(--transition-base);
+}
+
+.cs-feature-pill:hover {
+  border-color: var(--color-primary-300);
+  color: var(--color-primary-600);
+  background: var(--color-primary-50);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ─── Status Card ─── */
+.cs-status-card {
+  width: 100%;
+  max-width: 520px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-lg);
+  text-align: left;
+}
+
+.cs-status-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-5);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.cs-status-card__title {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+}
+
+.cs-status-card__phase {
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  color: var(--color-primary-600);
+  background: var(--color-primary-50);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+}
+
+/* ─── Phase List ─── */
+.cs-phases {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.cs-phase {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  transition: background var(--transition-fast);
+}
+
+.cs-phase--active {
+  background: var(--color-primary-50);
+}
+
+@media (prefers-color-scheme: dark) {
+  .cs-phase--active {
+    background: rgba(99, 102, 241, 0.1);
+  }
+}
+
+.cs-phase__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.cs-phase--active .cs-phase__dot {
+  background: var(--color-primary-500);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+  animation: pulse-glow 2s infinite;
+}
+
+.cs-phase--upcoming .cs-phase__dot {
+  background: var(--color-neutral-300);
+}
+
+.cs-phase__info {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.cs-phase__num {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  color: var(--text-muted);
+  min-width: 52px;
+}
+
+.cs-phase--active .cs-phase__num {
+  color: var(--color-primary-600);
+}
+
+.cs-phase__label {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-secondary);
+}
+
+.cs-phase--active .cs-phase__label {
+  color: var(--color-primary-700);
+  font-weight: var(--font-semibold);
+}
+
+/* ─── Footer Note ─── */
+.cs-footer-note {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}

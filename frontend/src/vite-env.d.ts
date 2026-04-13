@@ -1,0 +1,28 @@
+/// <reference types="vite/client" />
+
+// Declare CSS module imports so TypeScript doesn't complain
+declare module '*.css' {
+  const content: Record<string, string>;
+  export default content;
+}
+
+// Declare image/SVG imports
+declare module '*.svg' {
+  const src: string;
+  export default src;
+}
+
+declare module '*.png' {
+  const src: string;
+  export default src;
+}
+
+declare module '*.jpg' {
+  const src: string;
+  export default src;
+}
+
+declare module '*.webp' {
+  const src: string;
+  export default src;
+}
