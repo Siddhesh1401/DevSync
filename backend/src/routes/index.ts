@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { healthCheck } from './health';
 import { handleGitHubWebhook } from './webhook';
+import usersRouter from './users';
 
 const router = Router();
 
@@ -10,8 +11,8 @@ router.get('/health', healthCheck);
 // GitHub webhook receiver
 router.post('/webhook/github', handleGitHubWebhook);
 
-// Placeholder: Auth routes will be added in Phase 2
-// router.use('/auth', authRoutes);
+// User routes (Phase 2)
+router.use('/users', usersRouter);
 
 // Placeholder: Team routes will be added in Phase 2
 // router.use('/teams', teamRoutes);
