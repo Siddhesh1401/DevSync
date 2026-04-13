@@ -53,9 +53,23 @@ documentation/
 
 ---
 
+## 👋 New to the Project? Start Here
+
+| Document | What it tells you |
+|---|---|
+| [WEBSITE_AND_APP_ROADMAP.md](../WEBSITE_AND_APP_ROADMAP.md) | **← Start here.** Every phase, every page, every feature to build |
+| [srs-project overview/SRS_DEVSYNC.md](../srs-project%20overview/SRS_DEVSYNC.md) | Full requirements spec (FR1-8, NFR1-6, data models, wireframes) |
+| [DECISIONS.md](./DECISIONS.md) | Why we chose each technology |
+| [CHANGELOG.md](./CHANGELOG.md) | What has been built so far, phase by phase |
+| [api/endpoints.md](./api/endpoints.md) | All API endpoints (current + upcoming) |
+
+---
+
 ## 🔗 Quick Links
 
-- [Changelog](./CHANGELOG.md)
-- [Architecture Decisions](./DECISIONS.md)
-- [API Endpoints](./api/endpoints.md)
-- [Phase 1 Docs](./phases/phase-1-foundation.md)
+- [📋 Full Feature Roadmap](../WEBSITE_AND_APP_ROADMAP.md) ← **what to build**
+- [📝 Changelog](./CHANGELOG.md) ← **what's done**
+- [🏗️ Architecture Decisions](./DECISIONS.md) ← **why we built it this way**
+- [🔌 API Endpoints](./api/endpoints.md) ← **backend reference**
+- [📄 Phase 1 Docs](./phases/phase-1-foundation.md)
+- [📄 Phase 2 Docs](./phases/phase-2-auth.md)
