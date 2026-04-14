@@ -50,6 +50,10 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, titl
             <span className="nav-icon">🏠</span>
             <span className="nav-label">Dashboard</span>
           </Link>
+          <Link to="/dashboard/repos" className="nav-item" onClick={() => setSidebarOpen(false)}>
+            <span className="nav-icon">🐙</span>
+            <span className="nav-label">Repositories</span>
+          </Link>
           <Link to="/dashboard/prs" className="nav-item" onClick={() => setSidebarOpen(false)}>
             <span className="nav-icon">📋</span>
             <span className="nav-label">Pull Requests</span>

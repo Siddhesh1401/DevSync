@@ -2,22 +2,30 @@ import { Router } from 'express';
 import { healthCheck } from './health';
 import { handleGitHubWebhook } from './webhook';
 import usersRouter from './users';
+import teamsRouter from './teams';
+import reposRouter from './repos';
+import pullRequestsRouter from './pullRequests';
 
 const router = Router();
 
-// Health check
+// ─── Phase 1 ──────────────────────────────────────────────────────────────────
 router.get('/health', healthCheck);
-
-// GitHub webhook receiver
 router.post('/webhook/github', handleGitHubWebhook);
 
-// User routes (Phase 2)
+// ─── Phase 2 ──────────────────────────────────────────────────────────────────
 router.use('/users', usersRouter);
 
-// Placeholder: Team routes will be added in Phase 2
-// router.use('/teams', teamRoutes);
+// ─── Phase 3 ──────────────────────────────────────────────────────────────────
+router.use('/teams', teamsRouter);
+router.use('/repos', reposRouter);
+router.use('/prs', pullRequestsRouter);
 
-// Placeholder: PR routes will be added in Phase 3
-// router.use('/pull-requests', prRoutes);
+// ─── Phase 4 (upcoming) ───────────────────────────────────────────────────────
+// router.use('/notifications', notificationsRouter);
+
+// ─── Phase 5 (upcoming) ───────────────────────────────────────────────────────
+// router.use('/comments', commentsRouter);
+// router.use('/tasks', tasksRouter);
+// router.use('/activity', activityRouter);
 
 export default router;

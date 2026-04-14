@@ -55,15 +55,25 @@ feat: Phase 1 — Engineering Foundation complete
 
 ---
 
-## [Phase 2] — TBD — Auth & Team Management
+## [Phase 2] — April 2026 — Auth & Team Management ✅
 
-> _To be filled when Phase 2 is complete._
+### Added
+- **Authentication System** — Email/Password sign up, login, verification, and reset password flows.
+- **Protected Routes** — Middleware implementation to block unauthorized users.
+- **Frontend Pages** — Developed dark-themed `LandingPage`, `SignUpPage`, `LoginPage`.
+- **Database Logic** — User profiles tied securely to Supabase Auth.
+- **Team Creation** — Teams auto-linked to members upon creation.
 
 ---
 
-## [Phase 3] — TBD — GitHub Integration & PR Sync
+## [Phase 3] — April 2026 — GitHub Integration & PR Sync ✅
 
-> _To be filled when Phase 3 is complete._
+### Added
+- **GitHub Webhook Wizard** — `/dashboard/repos` UI to generate payload URLs and webhook secrets for easy connection.
+- **Webhook Handlers** — `/api/webhook/github` endpoint successfully parses `pull_request` (`opened`, `synchronize`, `closed`) and `push` events.
+- **Database Upserts** — Secure background ingestion of GitHub events directly into `repositories`, `pull_requests`, and `activity_events` tables.
+- **Live Sync Tests** — Connected endpoints dynamically via `ngrok` allowing real-world end-to-end webhook validation.
+- **Pull Request Dashboard** — Sleek dark-mode grid displaying all interconnected team PRs across multiple repositories.
 
 ---
 
