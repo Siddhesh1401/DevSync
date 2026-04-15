@@ -21,6 +21,9 @@ import { PRDetailPage } from './pages/prs/PRDetailPage';
 
 // Phase 4 — Notifications
 import { SettingsNotificationsPage } from './pages/settings/SettingsNotificationsPage';
+import { ActivityPage } from './pages/activity/ActivityPage';
+import { TasksPage } from './pages/tasks/TasksPage';
+import { TeamPage } from './pages/team/TeamPage';
 
 function App() {
   return (
@@ -44,10 +47,11 @@ function App() {
           <Route path="/dashboard/prs"       element={<ProtectedRoute><PRListPage /></ProtectedRoute>} />
           <Route path="/dashboard/prs/:id"   element={<ProtectedRoute><PRDetailPage /></ProtectedRoute>} />
 
-          {/* ── Protected (Phase 4) ── */}
+          {/* ── Protected (Phase 4 & 5) ── */}
+          <Route path="/dashboard/tasks"     element={<ProtectedRoute><TasksPage /></ProtectedRoute>} />
+          <Route path="/dashboard/team"      element={<ProtectedRoute><TeamPage /></ProtectedRoute>} />
           <Route path="/dashboard/settings"  element={<ProtectedRoute><SettingsNotificationsPage /></ProtectedRoute>} />
-
-
+          <Route path="/dashboard/activity"  element={<ProtectedRoute><ActivityPage /></ProtectedRoute>} />
           {/* ── Catch-all ── */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

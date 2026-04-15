@@ -24,9 +24,14 @@ router.use('/prs', pullRequestsRouter);
 // ─── Phase 4 ──────────────────────────────────────────────────────────────────
 router.use('/settings', settingsRouter);
 
-// ─── Phase 5 (upcoming) ───────────────────────────────────────────────────────
-// router.use('/comments', commentsRouter);
-// router.use('/tasks', tasksRouter);
-// router.use('/activity', activityRouter);
+// ─── Phase 5 ──────────────────────────────────────────────────────────────────
+import activityRouter from './activity';
+import tasksRouter from './tasks';
+
+import commentsRouter from './comments';
+
+router.use('/activity', activityRouter);
+router.use('/tasks', tasksRouter);
+router.use('/comments', commentsRouter);
 
 export default router;

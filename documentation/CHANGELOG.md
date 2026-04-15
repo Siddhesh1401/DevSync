@@ -87,9 +87,13 @@ feat: Phase 1 — Engineering Foundation complete
 
 ---
 
-## [Phase 5] — TBD — Core Product Features
+## [Phase 5] — April 2026 — Core Product Features ✅
 
-> _To be filled when Phase 5 is complete._
+### Added
+- **Global Activity Timeline**: A rich `ActivityPage.tsx` interface rendering an immutable scrolling ledger of every push, pull request merge, and task action.
+- **Kanban Board UI**: Added HTML5 drag-and-drop based `TasksPage.tsx` enabling columns for `To Do`, `In Progress`, and `Done`.
+- **Backend Task Engine**: Created `/api/tasks` handling creation (`POST`), cross-team reads (`GET`), and state mutation (`PATCH`).
+- **Audit Logging Connectors**: Attached backend tasks API dynamically to `activity_events` so dragging a task instantly alerts the Activity feed timeline.
 
 ---
 

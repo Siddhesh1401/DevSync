@@ -42,6 +42,11 @@ export const PRDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Comments state
+  const [comments, setComments] = useState<any[]>([]);
+  const [newComment, setNewComment] = useState('');
+  const [postingComment, setPostingComment] = useState(false);
+
   useEffect(() => {
     if (!token || !id) return;
 
@@ -60,8 +65,45 @@ export const PRDetailPage: React.FC = () => {
       }
     };
 
+    const fetchComments = async () => {
+      try {
+        const res = await fetch(`${API}/api/comments/pr/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const json = await res.json();
+        if (json.success) setComments(json.data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
     fetchPR();
+    fetchComments();
   }, [id, token]);
+
+  const handlePostComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newComment.trim() || !pr) return;
+    setPostingComment(true);
+
+    try {
+      const teamId = pr.repositories ? (pr as any).team_id : undefined; // Fallback
+      const res = await fetch(`${API}/api/comments/pr/${id}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: newComment, teamId }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setComments([...comments, json.data]);
+        setNewComment('');
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setPostingComment(false);
+    }
+  };
 
   const statusConfig = pr ? STATUS_CONFIG[pr.status] : null;
 
@@ -184,17 +226,37 @@ export const PRDetailPage: React.FC = () => {
               </div>
             )}
 
-            {/* ── Discussion placeholder ── */}
-            <div className="pr-discussion-placeholder">
-              <div className="placeholder-icon">💬</div>
-              <h3>Discussion coming in Phase 5</h3>
-              <p>
-                In-app PR discussions with @mentions and markdown support will be
-                available after Phase 5 is complete.
-              </p>
-              <a href={pr.github_url} target="_blank" rel="noreferrer" className="btn-ghost">
-                Discuss on GitHub for now ↗
-              </a>
+            {/* ── Discussion Section ── */}
+            <div className="pr-discussion-section">
+              <h3>💬 Discussion</h3>
+              <div className="comments-list">
+                {comments.length === 0 ? (
+                  <p className="no-comments">No comments yet. Start the conversation!</p>
+                ) : (
+                  comments.map(c => (
+                    <div key={c.id} className="comment-bubble">
+                      <div className="comment-header">
+                        <img src={c.author?.avatar_url || `https://github.com/identicons/${(c.author?.full_name || 'TeamMember').replace(/\s+/g, '')}.png`} alt="avatar" />
+                        <strong>{c.author?.full_name || 'Team Member'}</strong>
+                        <span>{new Date(c.created_at).toLocaleString()}</span>
+                      </div>
+                      <div className="comment-body">{c.content}</div>
+                    </div>
+                  ))
+                )}
+              </div>
+              <form onSubmit={handlePostComment} className="comment-form">
+                <textarea 
+                  rows={3} 
+                  placeholder="Leave a comment..."
+                  value={newComment}
+                  onChange={e => setNewComment(e.target.value)}
+                  disabled={postingComment}
+                />
+                <button type="submit" className="btn-primary" disabled={postingComment || !newComment.trim()}>
+                  {postingComment ? 'Posting...' : 'Comment'}
+                </button>
+              </form>
             </div>
           </>
         ) : null}
