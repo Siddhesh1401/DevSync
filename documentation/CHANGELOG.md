@@ -77,9 +77,13 @@ feat: Phase 1 — Engineering Foundation complete
 
 ---
 
-## [Phase 4] — TBD — Email Notification Engine
+## [Phase 4] — April 2026 — Email Notification Engine ✅
 
-> _To be filled when Phase 4 is complete._
+### Added
+- **Dynamic Settings UI:** `SettingsNotificationsPage.tsx` interface to control notification preferences.
+- **Backend Email Service:** Developed robust `emailService.ts` utilizing `nodemailer` mapped to an organic SMTP setup (Gmail App Passwords) for totally free global emailing.
+- **Beautiful HTML Templates:** Created engaging, visually impressive email templates for `PR Opened`, `PR Merged`, and `PR Updated` events.
+- **Database Target Filtering:** Linked webhook triggers to dynamically query the `notification_preferences` and `team_members` tables to only email subscribed members.
 
 ---
 

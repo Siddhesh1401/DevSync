@@ -9,7 +9,10 @@
     "start": "node dist/app.js",
     "lint": "eslint src/**/*.ts"
   },
-  "keywords": ["devsync", "api"],
+  "keywords": [
+    "devsync",
+    "api"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -23,7 +26,7 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.1",
     "@types/node": "^22.14.0",
-    "@types/nodemailer": "^6.4.17",
+    "@types/nodemailer": "^6.4.23",
     "@typescript-eslint/eslint-plugin": "^8.29.1",
     "@typescript-eslint/parser": "^8.29.1",
     "eslint": "^9.24.0",

@@ -5,7 +5,6 @@ export interface EmailOptions {
   to: string | string[];
   subject: string;
   html: string;
-  text?: string;
 }
 
 export interface EmailResult {
@@ -16,60 +15,46 @@ export interface EmailResult {
 
 /**
  * DevSync Email Service
- *
- * Phase 1: Logs emails to console in dev mode (no real sending)
- * Phase 4: Switch to SendGrid for production email delivery
+ * Uses Nodemailer with Gmail API to dispatch real emails for free.
  */
 class EmailService {
   private transporter: nodemailer.Transporter | null = null;
 
   constructor() {
-    if (env.isDev) {
-      // In development: use Ethereal (fake SMTP) or just log
-      console.log('📧 Email service running in DEV mode (emails logged to console)');
-    } else {
-      // Production: configure SendGrid SMTP
-      // TODO Phase 4: Set up SendGrid transport
+    if (env.gmailUser && env.gmailPass) {
       this.transporter = nodemailer.createTransport({
-        host: 'smtp.sendgrid.net',
-        port: 587,
+        service: 'gmail',
         auth: {
-          user: 'apikey',
-          pass: env.sendgridApiKey,
+          user: env.gmailUser,
+          pass: env.gmailPass,
         },
       });
+    } else {
+      console.warn('⚠️ No GMAIL_USER or GMAIL_PASS provided. Emails will not be sent.');
     }
   }
 
   async sendEmail(options: EmailOptions): Promise<EmailResult> {
-    const { to, subject, html, text } = options;
+    const { to, subject, html } = options;
     const recipients = Array.isArray(to) ? to.join(', ') : to;
 
-    if (env.isDev) {
-      // Dev mode: just log the email
-      console.log('\n📧 ─── EMAIL (DEV MODE - Not actually sent) ───');
+    if (!this.transporter) {
+      console.log('\n📧 ─── EMAIL (API KEY MISSING) ───');
       console.log(`   To: ${recipients}`);
       console.log(`   Subject: ${subject}`);
-      console.log(`   Preview: ${text?.slice(0, 100) || html.slice(0, 100)}...`);
-      console.log('────────────────────────────────────────────\n');
+      console.log('────────────────────────────────────\n');
       return { success: true, messageId: `dev-${Date.now()}` };
-    }
-
-    if (!this.transporter) {
-      console.error('Email transporter not configured');
-      return { success: false, error: 'Email transporter not configured' };
     }
 
     try {
       const result = await this.transporter.sendMail({
-        from: '"DevSync" <noreply@devsync.app>',
+        from: `"DevSync" <${env.gmailUser}>`,
         to: recipients,
         subject,
         html,
-        text,
       });
 
-      console.log(`✅ Email sent to ${recipients} (ID: ${result.messageId})`);
+      console.log(`✅ Email dispatched to ${recipients} (ID: ${result.messageId})`);
       return { success: true, messageId: result.messageId };
     } catch (err) {
       const error = err instanceof Error ? err.message : 'Unknown email error';
@@ -109,7 +94,7 @@ class EmailService {
         <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
         <p style="color: #888; font-size: 12px;">
           You received this email because you're a member of this DevSync team.
-          <a href="${params.devSyncUrl}/settings/notifications">Manage preferences</a>
+          <a href="${params.devSyncUrl}/dashboard/settings">Manage preferences</a>
         </p>
       </div>
     `;
@@ -118,8 +103,59 @@ class EmailService {
       to: params.to,
       subject,
       html,
-      text: `New PR by ${params.authorName}: ${params.prTitle} | GitHub: ${params.githubUrl}`,
     });
+  }
+
+  // Template: PR Merged notification
+  async sendPRMergedEmail(params: {
+    to: string[];
+    prTitle: string;
+    prNumber: number;
+    mergedBy: string;
+    githubUrl: string;
+    devSyncUrl: string;
+  }): Promise<EmailResult> {
+    const subject = `[DevSync] PR Merged #${params.prNumber}: ${params.prTitle}`;
+    const html = `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #10b981;">🎉 Pull Request Merged</h2>
+        <p><strong>${params.mergedBy}</strong> just merged a pull request:</p>
+        <div style="background: #f8f8f8; padding: 16px; border-radius: 8px; margin: 16px 0;">
+          <p>📌 <strong>PR Title:</strong> ${params.prTitle}</p>
+          <p>👑 <strong>Merged by:</strong> ${params.mergedBy}</p>
+        </div>
+        <div style="margin: 24px 0;">
+          <a href="${params.devSyncUrl}/dashboard/prs" style="background: #6366f1; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none;">
+            View Dashboard
+          </a>
+        </div>
+      </div>
+    `;
+
+    return this.sendEmail({ to: params.to, subject, html });
+  }
+
+  // Template: PR Updated notification
+  async sendPRUpdatedEmail(params: {
+    to: string[];
+    prTitle: string;
+    prNumber: number;
+    authorName: string;
+    githubUrl: string;
+    devSyncUrl: string;
+  }): Promise<EmailResult> {
+    const subject = `[DevSync] PR Updated #${params.prNumber}: ${params.prTitle}`;
+    const html = `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #f59e0b;">🔄 Pull Request Updated</h2>
+        <p><strong>${params.authorName}</strong> pushed new commits to:</p>
+        <div style="background: #f8f8f8; padding: 16px; border-radius: 8px; margin: 16px 0;">
+          <p>📌 <strong>PR Title:</strong> ${params.prTitle}</p>
+        </div>
+      </div>
+    `;
+
+    return this.sendEmail({ to: params.to, subject, html });
   }
 }
 

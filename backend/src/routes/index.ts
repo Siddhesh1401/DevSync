@@ -5,6 +5,7 @@ import usersRouter from './users';
 import teamsRouter from './teams';
 import reposRouter from './repos';
 import pullRequestsRouter from './pullRequests';
+import settingsRouter from './settings';
 
 const router = Router();
 
@@ -20,8 +21,8 @@ router.use('/teams', teamsRouter);
 router.use('/repos', reposRouter);
 router.use('/prs', pullRequestsRouter);
 
-// ─── Phase 4 (upcoming) ───────────────────────────────────────────────────────
-// router.use('/notifications', notificationsRouter);
+// ─── Phase 4 ──────────────────────────────────────────────────────────────────
+router.use('/settings', settingsRouter);
 
 // ─── Phase 5 (upcoming) ───────────────────────────────────────────────────────
 // router.use('/comments', commentsRouter);

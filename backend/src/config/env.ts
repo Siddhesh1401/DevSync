@@ -23,7 +23,8 @@ export const env = {
   supabaseUrl: process.env.SUPABASE_URL!,
   supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
   githubWebhookSecret: process.env.GITHUB_WEBHOOK_SECRET!,
-  sendgridApiKey: process.env.SENDGRID_API_KEY || '',
+  gmailUser: process.env.GMAIL_USER || '',
+  gmailPass: process.env.GMAIL_PASS || '',
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
   isDev: process.env.NODE_ENV !== 'production',
 };

@@ -19,6 +19,9 @@ import { ReposPage } from './pages/repos/ReposPage';
 import { PRListPage } from './pages/prs/PRListPage';
 import { PRDetailPage } from './pages/prs/PRDetailPage';
 
+// Phase 4 — Notifications
+import { SettingsNotificationsPage } from './pages/settings/SettingsNotificationsPage';
+
 function App() {
   return (
     <AuthProvider>
@@ -40,6 +43,10 @@ function App() {
           <Route path="/dashboard/repos"     element={<ProtectedRoute><ReposPage /></ProtectedRoute>} />
           <Route path="/dashboard/prs"       element={<ProtectedRoute><PRListPage /></ProtectedRoute>} />
           <Route path="/dashboard/prs/:id"   element={<ProtectedRoute><PRDetailPage /></ProtectedRoute>} />
+
+          {/* ── Protected (Phase 4) ── */}
+          <Route path="/dashboard/settings"  element={<ProtectedRoute><SettingsNotificationsPage /></ProtectedRoute>} />
+
 
           {/* ── Catch-all ── */}
           <Route path="*" element={<Navigate to="/" replace />} />

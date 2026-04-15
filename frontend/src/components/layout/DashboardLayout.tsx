@@ -70,7 +70,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, titl
             <span className="nav-icon">👥</span>
             <span className="nav-label">Team</span>
           </Link>
-          <Link to="/profile" className="nav-item" onClick={() => setSidebarOpen(false)}>
+          <Link to="/dashboard/settings" className="nav-item" onClick={() => setSidebarOpen(false)}>
             <span className="nav-icon">⚙️</span>
             <span className="nav-label">Settings</span>
           </Link>

@@ -79,25 +79,49 @@ const getPRStatus = (pr: GitHubPullRequestPayload['pull_request'], action: strin
 
 // ─── Event handlers ───────────────────────────────────────────────────────────
 
+import { emailService } from '../services/emailService';
+
+// Fetch emails logic
+const getTargetEmails = async (teamId: string, prefKey: 'pr_created' | 'pr_merged' | 'pr_updated', excludeActorName?: string): Promise<string[]> => {
+  const { data: members } = await supabase.from('team_members').select('user_id').eq('team_id', teamId);
+  if (!members?.length) return [];
+  
+  const userIds = members.map(m => m.user_id);
+  
+  // Exclude the person who actually made the PR from getting an email about their own PR
+  // But wait, we only have actor_name (github login), not their user_id unless their github_username matches.
+  // We'll just rely on preferences for now.
+  
+  const { data: prefs } = await supabase
+    .from('notification_preferences')
+    .select(`user_id, ${prefKey}`)
+    .in('user_id', userIds)
+    .eq(prefKey, true);
+
+  if (!prefs?.length) return [];
+  
+  const targetIds = prefs.map(p => p.user_id);
+  const emails: string[] = [];
+  
+  for (const id of targetIds) {
+    const { data: { user }, error } = await supabase.auth.admin.getUserById(id);
+    if (!error && user?.email) emails.push(user.email);
+  }
+  
+  return emails;
+};
+
 const handlePullRequest = async (payload: GitHubPullRequestPayload): Promise<void> => {
   const { action, pull_request: pr, repository } = payload;
 
-  // Only handle relevant actions
   const handledActions = ['opened', 'synchronize', 'closed', 'reopened'];
-  if (!handledActions.includes(action)) {
-    console.log(`   PR action "${action}" — skipped`);
-    return;
-  }
+  if (!handledActions.includes(action)) return;
 
   const repo = await findRepo(repository.full_name);
-  if (!repo) {
-    console.log(`   ⚠️  Repo "${repository.full_name}" not found in DevSync — skipping`);
-    return;
-  }
+  if (!repo) return;
 
   const status = getPRStatus(pr, action);
 
-  // Upsert the PR (insert on 'opened', update on everything else)
   const { error } = await supabase
     .from('pull_requests')
     .upsert(
@@ -127,7 +151,52 @@ const handlePullRequest = async (payload: GitHubPullRequestPayload): Promise<voi
     return;
   }
 
-  // Log to activity feed
+  // Handle Notifications
+  try {
+    const devSyncUrl = env.frontendUrl;
+
+    if (action === 'opened') {
+      const emails = await getTargetEmails(repo.team_id, 'pr_created');
+      if (emails.length > 0) {
+        await emailService.sendPRCreatedEmail({
+          to: emails,
+          prTitle: pr.title,
+          prNumber: payload.number,
+          authorName: pr.user.login,
+          branchName: pr.head.ref,
+          githubUrl: pr.html_url,
+          devSyncUrl,
+        });
+      }
+    } else if (action === 'closed' && pr.merged) {
+      const emails = await getTargetEmails(repo.team_id, 'pr_merged');
+      if (emails.length > 0) {
+        await emailService.sendPRMergedEmail({
+          to: emails,
+          prTitle: pr.title,
+          prNumber: payload.number,
+          mergedBy: pr.merged_by?.login || pr.user.login,
+          githubUrl: pr.html_url,
+          devSyncUrl,
+        });
+      }
+    } else if (action === 'synchronize') {
+      const emails = await getTargetEmails(repo.team_id, 'pr_updated');
+      if (emails.length > 0) {
+        await emailService.sendPRUpdatedEmail({
+          to: emails,
+          prTitle: pr.title,
+          prNumber: payload.number,
+          authorName: pr.user.login,
+          githubUrl: pr.html_url,
+          devSyncUrl,
+        });
+      }
+    }
+  } catch (err) {
+    console.error('   ⚠️ Failed to dispatch emails:', err);
+  }
+
   const eventTypeMap: Record<string, string> = {
     opened: 'pr_created',
     synchronize: 'pr_updated',
@@ -152,15 +221,11 @@ const handlePullRequest = async (payload: GitHubPullRequestPayload): Promise<voi
     metadata: { github_pr_id: pr.id, pr_url: pr.html_url },
   });
 
-  // Mark repo as connected (in case the ping wasn't caught)
   if (!repo.is_connected) {
-    await supabase
-      .from('repositories')
-      .update({ is_connected: true, connected_at: new Date().toISOString() })
-      .eq('id', repo.id);
+    await supabase.from('repositories').update({ is_connected: true, connected_at: new Date().toISOString() }).eq('id', repo.id);
   }
 
-  console.log(`   ✅ PR #${payload.number} saved — status: ${status}`);
+  console.log(`   ✅ PR #${payload.number} saved & processed — status: ${status}`);
 };
 
 const handlePush = async (payload: GitHubPushPayload): Promise<void> => {
