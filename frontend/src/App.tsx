@@ -21,6 +21,7 @@ import { PRDetailPage } from './pages/prs/PRDetailPage';
 
 // Phase 4 — Notifications
 import { SettingsNotificationsPage } from './pages/settings/SettingsNotificationsPage';
+import { NotificationHistoryPage } from './pages/settings/NotificationHistoryPage';
 import { ActivityPage } from './pages/activity/ActivityPage';
 import { TasksPage } from './pages/tasks/TasksPage';
 import { TeamPage } from './pages/team/TeamPage';
@@ -51,6 +52,7 @@ function App() {
           <Route path="/dashboard/tasks"     element={<ProtectedRoute><TasksPage /></ProtectedRoute>} />
           <Route path="/dashboard/team"      element={<ProtectedRoute><TeamPage /></ProtectedRoute>} />
           <Route path="/dashboard/settings"  element={<ProtectedRoute><SettingsNotificationsPage /></ProtectedRoute>} />
+          <Route path="/dashboard/settings/history" element={<ProtectedRoute><NotificationHistoryPage /></ProtectedRoute>} />
           <Route path="/dashboard/activity"  element={<ProtectedRoute><ActivityPage /></ProtectedRoute>} />
           {/* ── Catch-all ── */}
           <Route path="*" element={<Navigate to="/" replace />} />

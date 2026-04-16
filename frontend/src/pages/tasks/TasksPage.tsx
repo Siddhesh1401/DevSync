@@ -24,7 +24,12 @@ export const TasksPage: React.FC = () => {
   const token = session?.access_token;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newTask, setNewTask] = useState({ title: '', description: '', priority: 'medium' });
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [taskForm, setTaskForm] = useState({ title: '', description: '', priority: 'medium' });
+
+  // Filters mapping
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterPriority, setFilterPriority] = useState('all');
 
   useEffect(() => {
     if (!token) return;
@@ -45,28 +50,58 @@ export const TasksPage: React.FC = () => {
     }
   };
 
-  const handleCreateTask = async (e: React.FormEvent) => {
+  const handleOpenCreate = () => {
+    setEditingTaskId(null);
+    setTaskForm({ title: '', description: '', priority: 'medium' });
+    setIsModalOpen(true);
+  }
+
+  const handleOpenEdit = (task: Task) => {
+    setEditingTaskId(task.id);
+    setTaskForm({ title: task.title, description: task.description || '', priority: task.priority });
+    setIsModalOpen(true);
+  }
+
+  const handleSaveTask = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!token || !newTask.title) return;
+    if (!token || !taskForm.title) return;
 
     try {
-      const res = await fetch(`${API_URL}/api/tasks`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newTask),
+      const url = editingTaskId ? `${API_URL}/api/tasks/${editingTaskId}` : `${API_URL}/api/tasks`;
+      const method = editingTaskId ? 'PATCH' : 'POST';
+
+      const res = await fetch(url, {
+        method,
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(taskForm),
       });
       const json = await res.json();
+      
       if (json.success) {
-        setTasks([json.data, ...tasks]);
+        if (editingTaskId) {
+          setTasks(tasks.map(t => t.id === editingTaskId ? json.data : t));
+        } else {
+          setTasks([json.data, ...tasks]);
+        }
         setIsModalOpen(false);
-        setNewTask({ title: '', description: '', priority: 'medium' });
       }
     } catch (err) {
       console.error(err);
     }
+  };
+
+  const handleDeleteTask = async () => {
+    if (!editingTaskId || !window.confirm('Are you sure you want to delete this task?')) return;
+    try {
+      const res = await fetch(`${API_URL}/api/tasks/${editingTaskId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setTasks(tasks.filter(t => t.id !== editingTaskId));
+        setIsModalOpen(false);
+      }
+    } catch (err) { console.error(err); }
   };
 
   const handleDragStart = (e: DragEvent<HTMLDivElement>, taskId: string) => {
@@ -107,6 +142,12 @@ export const TasksPage: React.FC = () => {
     { id: 'done', label: 'Done' },
   ];
 
+  const filteredTasks = tasks.filter(task => {
+    if (filterPriority !== 'all' && task.priority !== filterPriority) return false;
+    if (searchQuery && !task.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    return true;
+  });
+
   return (
     <DashboardLayout>
       <div className="tasks-container fade-in">
@@ -115,9 +156,29 @@ export const TasksPage: React.FC = () => {
             <h1>Task Board</h1>
             <p>Manage your sprint and drag issues to completion.</p>
           </div>
-          <button className="btn-primary" onClick={() => setIsModalOpen(true)}>
-            + New Task
-          </button>
+          <div className="tasks-header-actions" style={{ display: 'flex', gap: '12px' }}>
+            <input 
+              type="text" 
+              placeholder="Search tasks..." 
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="task-search-input"
+              style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #334155', background: '#0f172a', color: 'white' }}
+            />
+            <select 
+              value={filterPriority} 
+              onChange={e => setFilterPriority(e.target.value)}
+              style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #334155', background: '#0f172a', color: 'white' }}
+            >
+              <option value="all">All Priorities</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+            <button className="btn-primary" onClick={handleOpenCreate}>
+              + New Task
+            </button>
+          </div>
         </header>
 
         {loading ? (
@@ -133,15 +194,16 @@ export const TasksPage: React.FC = () => {
               >
                 <div className="column-header">
                   <h2>{col.label}</h2>
-                  <span className="task-count">{tasks.filter(t => t.status === col.id).length}</span>
+                  <span className="task-count">{filteredTasks.filter(t => t.status === col.id).length}</span>
                 </div>
                 <div className="column-content">
-                  {tasks.filter(t => t.status === col.id).map(task => (
+                  {filteredTasks.filter(t => t.status === col.id).map(task => (
                     <div 
                       key={task.id} 
                       className="task-card"
                       draggable
                       onDragStart={(e) => handleDragStart(e, task.id)}
+                      onClick={() => handleOpenEdit(task)}
                     >
                       <h3 className="task-title">{task.title}</h3>
                       {task.description && <p className="task-desc">{task.description}</p>}
@@ -165,16 +227,16 @@ export const TasksPage: React.FC = () => {
         {isModalOpen && (
           <div className="modal-overlay">
             <div className="modal-content">
-              <h2>Create New Task</h2>
-              <form onSubmit={handleCreateTask}>
+              <h2>{editingTaskId ? 'Edit Task' : 'Create New Task'}</h2>
+              <form onSubmit={handleSaveTask}>
                 <div className="form-group">
                   <label>Title</label>
                   <input 
                     type="text" 
                     required 
                     placeholder="e.g. Fix login CSS bug"
-                    value={newTask.title} 
-                    onChange={e => setNewTask({...newTask, title: e.target.value})} 
+                    value={taskForm.title} 
+                    onChange={e => setTaskForm({...taskForm, title: e.target.value})} 
                   />
                 </div>
                 <div className="form-group">
@@ -182,24 +244,29 @@ export const TasksPage: React.FC = () => {
                   <textarea 
                     rows={3} 
                     placeholder="Provide some details..."
-                    value={newTask.description} 
-                    onChange={e => setNewTask({...newTask, description: e.target.value})} 
+                    value={taskForm.description} 
+                    onChange={e => setTaskForm({...taskForm, description: e.target.value})} 
                   />
                 </div>
                 <div className="form-group">
                   <label>Priority</label>
                   <select 
-                    value={newTask.priority} 
-                    onChange={e => setNewTask({...newTask, priority: e.target.value})}
+                    value={taskForm.priority} 
+                    onChange={e => setTaskForm({...taskForm, priority: e.target.value})}
                   >
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
                     <option value="high">High</option>
                   </select>
                 </div>
-                <div className="modal-actions">
-                  <button type="button" className="btn-secondary" onClick={() => setIsModalOpen(false)}>Cancel</button>
-                  <button type="submit" className="btn-primary">Create Task</button>
+                <div className="modal-actions" style={{ justifyContent: 'space-between', display: 'flex' }}>
+                  {editingTaskId ? (
+                    <button type="button" className="btn-secondary" style={{ color: '#ef4444', borderColor: '#ef4444' }} onClick={handleDeleteTask}>Delete Task</button>
+                  ) : <div />}
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <button type="button" className="btn-secondary" onClick={() => setIsModalOpen(false)}>Cancel</button>
+                    <button type="submit" className="btn-primary">{editingTaskId ? 'Save' : 'Create'}</button>
+                  </div>
                 </div>
               </form>
             </div>

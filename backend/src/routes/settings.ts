@@ -53,4 +53,25 @@ router.patch('/notifications', requireAuth, async (req: AuthRequest, res: Respon
   }
 });
 
+/**
+ * GET /api/settings/notifications/history
+ * Get the current user's notification history.
+ */
+router.get('/notifications/history', requireAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const { data, error } = await supabase
+      .from('notification_history')
+      .select('*')
+      .eq('user_id', req.user!.id)
+      .order('sent_at', { ascending: false })
+      .limit(50);
+
+    if (error) throw error;
+
+    return res.status(200).json({ success: true, data });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: { message: error.message } });
+  }
+});
+
 export default router;

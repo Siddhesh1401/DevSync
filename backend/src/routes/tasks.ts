@@ -118,4 +118,24 @@ router.patch('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   }
 });
 
+// ─── DELETE /api/tasks/:id ───────────────────────────────────────────────────
+router.delete('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const teamId = await getUserTeamId(req.user!.id);
+    if (!teamId) return res.status(403).json({ success: false, error: { message: 'No team found' } });
+
+    const { error } = await supabase
+      .from('tasks')
+      .delete()
+      .eq('id', id)
+      .eq('team_id', teamId);
+
+    if (error) throw error;
+    res.status(200).json({ success: true, data: null });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: { message: error.message } });
+  }
+});
+
 export default router;

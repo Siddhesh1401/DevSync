@@ -47,6 +47,22 @@ export const PRDetailPage: React.FC = () => {
   const [newComment, setNewComment] = useState('');
   const [postingComment, setPostingComment] = useState(false);
 
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editCommentText, setEditCommentText] = useState('');
+
+  // Simple Markdown parser
+  const renderMarkdown = (text: string) => {
+    let html = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/`(.*?)`/g, '<code>$1</code>')
+      .replace(/@([A-Za-z0-9_]+)/g, '<span class="mention">@$1</span>');
+    return { __html: html };
+  };
+
   useEffect(() => {
     if (!token || !id) return;
 
@@ -102,6 +118,44 @@ export const PRDetailPage: React.FC = () => {
       console.error(err);
     } finally {
       setPostingComment(false);
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (!window.confirm('Are you sure you want to delete this comment?')) return;
+    try {
+      const res = await fetch(`${API}/api/comments/${commentId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const json = await res.json();
+      if (json.success) {
+        setComments(comments.filter(c => c.id !== commentId));
+      } else {
+        alert(json.error?.message || 'Failed to delete');
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleSaveEdit = async (commentId: string) => {
+    if (!editCommentText.trim()) return;
+    try {
+      const res = await fetch(`${API}/api/comments/${commentId}`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: editCommentText })
+      });
+      const json = await res.json();
+      if (json.success) {
+        setComments(comments.map(c => c.id === commentId ? json.data : c));
+        setEditingCommentId(null);
+      } else {
+        alert(json.error?.message || 'Failed to update comment');
+      }
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -219,12 +273,18 @@ export const PRDetailPage: React.FC = () => {
             </div>
 
             {/* ── Description ── */}
-            {pr.description && (
-              <div className="pr-description-section">
-                <h3>📄 Description</h3>
-                <div className="pr-description">{pr.description}</div>
-              </div>
-            )}
+            <div className="pr-description-section" style={{ marginTop: '20px', padding: '20px', background: 'rgba(15, 23, 42, 0.4)', borderRadius: '12px', border: '1px solid #334155' }}>
+              <h3 style={{ marginBottom: '15px' }}>📄 Description</h3>
+              {pr.description ? (
+                <div 
+                  className="pr-description" 
+                  dangerouslySetInnerHTML={renderMarkdown(pr.description)}
+                  style={{ color: '#cbd5e1', lineHeight: '1.6' }}
+                />
+              ) : (
+                <p style={{ color: '#64748b', fontStyle: 'italic' }}>No description provided for this pull request.</p>
+              )}
+            </div>
 
             {/* ── Discussion Section ── */}
             <div className="pr-discussion-section">
@@ -239,8 +299,35 @@ export const PRDetailPage: React.FC = () => {
                         <img src={c.author?.avatar_url || `https://github.com/identicons/${(c.author?.full_name || 'TeamMember').replace(/\s+/g, '')}.png`} alt="avatar" />
                         <strong>{c.author?.full_name || 'Team Member'}</strong>
                         <span>{new Date(c.created_at).toLocaleString()}</span>
+                        {c.author_id === session?.user?.id && (
+                          <div className="comment-actions">
+                            <button className="btn-ghost-sm" onClick={() => {
+                              setEditingCommentId(c.id);
+                              setEditCommentText(c.content);
+                            }}>Edit</button>
+                            <button className="btn-ghost-sm text-danger" onClick={() => handleDeleteComment(c.id)}>Delete</button>
+                          </div>
+                        )}
                       </div>
-                      <div className="comment-body">{c.content}</div>
+                      
+                      {editingCommentId === c.id ? (
+                        <div className="edit-comment-form">
+                          <textarea 
+                            value={editCommentText} 
+                            onChange={e => setEditCommentText(e.target.value)} 
+                            rows={3} 
+                          />
+                          <div className="edit-actions">
+                            <button className="btn-ghost-sm" onClick={() => setEditingCommentId(null)}>Cancel</button>
+                            <button className="btn-primary" onClick={() => handleSaveEdit(c.id)}>Save</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div 
+                          className="comment-body" 
+                          dangerouslySetInnerHTML={renderMarkdown(c.content)} 
+                        />
+                      )}
                     </div>
                   ))
                 )}

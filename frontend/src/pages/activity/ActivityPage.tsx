@@ -17,6 +17,11 @@ interface ActivityEvent {
 const ActivityPage: React.FC = () => {
   const [events, setEvents] = useState<ActivityEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Search & Filter State
+  const [filterType, setFilterType] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+
   const { session } = useAuth();
   const token = session?.access_token;
 
@@ -57,21 +62,55 @@ const ActivityPage: React.FC = () => {
     return actor ? actor.substring(0, 2).toUpperCase() : '??';
   };
 
+  const filteredEvents = events.filter(evt => {
+    if (filterType !== 'all') {
+      if (filterType === 'pr' && !evt.event_type.startsWith('pr_')) return false;
+      if (filterType === 'task' && !evt.event_type.startsWith('task_')) return false;
+      if (filterType === 'other' && (evt.event_type.startsWith('pr_') || evt.event_type.startsWith('task_'))) return false;
+    }
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      if (!evt.description.toLowerCase().includes(q) && !evt.actor_name.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+
   return (
     <DashboardLayout>
       <div className="activity-container fade-in">
         <header className="activity-header">
-          <h1>Team Activity</h1>
-          <p>A real-time heartbeat of everything happening in your team.</p>
+          <div className="activity-title-group">
+            <h1>Team Activity</h1>
+            <p>A real-time heartbeat of everything happening in your team.</p>
+          </div>
+          <div className="activity-filters" style={{ display: 'flex', gap: '12px' }}>
+            <input 
+              type="text" 
+              placeholder="Search feed..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #334155', background: '#0f172a', color: 'white' }}
+            />
+            <select 
+              value={filterType} 
+              onChange={e => setFilterType(e.target.value)}
+              style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #334155', background: '#0f172a', color: 'white' }}
+            >
+              <option value="all">All Events</option>
+              <option value="pr">Pull Requests</option>
+              <option value="task">Tasks</option>
+              <option value="other">Other Activity</option>
+            </select>
+          </div>
         </header>
 
         {loading ? (
           <div className="timeline-empty">Loading team heartbeat...</div>
-        ) : events.length === 0 ? (
-          <div className="timeline-empty">No activity found. Connect a GitHub repository to see the magic happen!</div>
+        ) : filteredEvents.length === 0 ? (
+          <div className="timeline-empty">No activity found matching your filters.</div>
         ) : (
           <div className="timeline">
-            {events.map((evt) => (
+            {filteredEvents.map((evt) => (
               <div key={evt.id} className={`timeline-item ${evt.event_type}`}>
                 <div className="timeline-content">
                   <header>

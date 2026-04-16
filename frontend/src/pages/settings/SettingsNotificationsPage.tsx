@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { useAuth } from '../../hooks';
 import './SettingsNotificationsPage.css';
@@ -88,9 +89,14 @@ export const SettingsNotificationsPage: React.FC = () => {
     <DashboardLayout title="Notification Settings">
       <div className="settings-page">
         <div className="settings-card">
-          <div className="settings-header">
-            <h3>Email Notifications</h3>
-            <p>Control what emails DevSync sends to <strong>{user?.email}</strong>.</p>
+          <div className="settings-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <h3>Email Notifications</h3>
+              <p>Control what emails DevSync sends to <strong>{user?.email}</strong>.</p>
+            </div>
+            <Link to="/dashboard/settings/history" className="btn-ghost-sm" style={{ textDecoration: 'none', border: '1px solid #334155' }}>
+              📜 View History
+            </Link>
           </div>
 
           {loading ? (

@@ -85,5 +85,89 @@ router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
     return res.status(500).json({ success: false, error: { message: error.message } });
   }
 });
+/**
+ * PATCH /api/teams/:id
+ * Update team name and description. Must be an owner or admin.
+ */
+router.patch('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { name, description } = req.body;
+
+    const requesterData = await getUserTeam(req.user!.id);
+    if (!requesterData || requesterData.team_id !== id || (requesterData.role !== 'owner' && requesterData.role !== 'admin')) {
+      return res.status(403).json({ success: false, error: { message: 'Must be admin or owner to edit team settings' } });
+    }
+
+    if (!name?.trim()) {
+      return res.status(400).json({ success: false, error: { message: 'Team name is required' } });
+    }
+
+    const { data: team, error } = await supabase
+      .from('teams')
+      .update({ name: name.trim(), description: description?.trim() || null })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.status(200).json({ success: true, data: team });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: { message: error.message } });
+  }
+});
+// ─── Member Management ────────────────────────────────────────────────────────
+
+router.patch('/members/:userId', requireAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const { userId } = req.params;
+    const { role } = req.body;
+    
+    // Check if requester is owner/admin
+    const requesterData = await getUserTeam(req.user!.id);
+    if (!requesterData || (requesterData.role !== 'owner' && requesterData.role !== 'admin')) {
+      return res.status(403).json({ success: false, error: { message: 'Must be admin to change roles' } });
+    }
+
+    const { error } = await supabase
+      .from('team_members')
+      .update({ role })
+      .eq('user_id', userId)
+      .eq('team_id', requesterData.team_id);
+
+    if (error) throw error;
+    res.status(200).json({ success: true, data: null });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: { message: error.message } });
+  }
+});
+
+router.delete('/members/:userId', requireAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const { userId } = req.params;
+
+    // Check if requester is owner/admin
+    const requesterData = await getUserTeam(req.user!.id);
+    if (!requesterData || (requesterData.role !== 'owner' && requesterData.role !== 'admin')) {
+      return res.status(403).json({ success: false, error: { message: 'Must be admin to remove members' } });
+    }
+
+    // Owner cannot remove themselves (unless deleting team, which isn't covered here)
+    if (userId === req.user!.id && requesterData.role === 'owner') {
+      return res.status(400).json({ success: false, error: { message: 'Owner cannot remove themselves' } });
+    }
+
+    const { error } = await supabase
+      .from('team_members')
+      .delete()
+      .eq('user_id', userId)
+      .eq('team_id', requesterData.team_id);
+
+    if (error) throw error;
+    res.status(200).json({ success: true, data: null });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: { message: error.message } });
+  }
+});
 
 export default router;

@@ -243,3 +243,19 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE TRIGGER trg_on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION handle_new_user();
+
+-- ─── NOTIFICATION HISTORY ────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS notification_history (
+  id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id      UUID        REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  type         TEXT        NOT NULL,
+  subject      TEXT        NOT NULL,
+  status       TEXT        NOT NULL CHECK (status IN ('sent', 'failed')),
+  error        TEXT,
+  sent_at      TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+COMMENT ON TABLE notification_history IS 'Log of sent/failed email notifications for users';
+CREATE INDEX idx_notification_history_user_id ON notification_history (user_id);
+CREATE INDEX idx_notification_history_sent_at ON notification_history (sent_at DESC);

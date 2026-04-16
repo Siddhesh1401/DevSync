@@ -82,15 +82,11 @@ const getPRStatus = (pr: GitHubPullRequestPayload['pull_request'], action: strin
 import { emailService } from '../services/emailService';
 
 // Fetch emails logic
-const getTargetEmails = async (teamId: string, prefKey: 'pr_created' | 'pr_merged' | 'pr_updated', excludeActorName?: string): Promise<string[]> => {
+const getTargetEmails = async (teamId: string, prefKey: 'pr_created' | 'pr_merged' | 'pr_updated', excludeActorName?: string): Promise<Array<{ userId: string, email: string }>> => {
   const { data: members } = await supabase.from('team_members').select('user_id').eq('team_id', teamId);
   if (!members?.length) return [];
   
   const userIds = members.map(m => m.user_id);
-  
-  // Exclude the person who actually made the PR from getting an email about their own PR
-  // But wait, we only have actor_name (github login), not their user_id unless their github_username matches.
-  // We'll just rely on preferences for now.
   
   const { data: prefs } = await supabase
     .from('notification_preferences')
@@ -100,15 +96,27 @@ const getTargetEmails = async (teamId: string, prefKey: 'pr_created' | 'pr_merge
 
   if (!prefs?.length) return [];
   
-  const targetIds = prefs.map(p => p.user_id);
-  const emails: string[] = [];
+  const results: Array<{ userId: string, email: string }> = [];
   
-  for (const id of targetIds) {
-    const { data: { user }, error } = await supabase.auth.admin.getUserById(id);
-    if (!error && user?.email) emails.push(user.email);
+  for (const p of prefs) {
+    const { data: { user }, error } = await supabase.auth.admin.getUserById(p.user_id);
+    if (!error && user?.email) {
+      results.push({ userId: p.user_id, email: user.email });
+    }
   }
   
-  return emails;
+  return results;
+};
+
+// Helper: Log notification history
+const logNotification = async (userId: string, type: string, subject: string, success: boolean, error?: string) => {
+  await supabase.from('notification_history').insert({
+    user_id: userId,
+    type,
+    subject,
+    status: success ? 'sent' : 'failed',
+    error: error || null
+  });
 };
 
 const handlePullRequest = async (payload: GitHubPullRequestPayload): Promise<void> => {
@@ -156,10 +164,10 @@ const handlePullRequest = async (payload: GitHubPullRequestPayload): Promise<voi
     const devSyncUrl = env.frontendUrl;
 
     if (action === 'opened') {
-      const emails = await getTargetEmails(repo.team_id, 'pr_created');
-      if (emails.length > 0) {
-        await emailService.sendPRCreatedEmail({
-          to: emails,
+      const targets = await getTargetEmails(repo.team_id, 'pr_created');
+      for (const target of targets) {
+        const result = await emailService.sendPRCreatedEmail({
+          to: [target.email],
           prTitle: pr.title,
           prNumber: payload.number,
           authorName: pr.user.login,
@@ -167,30 +175,33 @@ const handlePullRequest = async (payload: GitHubPullRequestPayload): Promise<voi
           githubUrl: pr.html_url,
           devSyncUrl,
         });
+        await logNotification(target.userId, 'pr_created', `New PR #${payload.number}: ${pr.title}`, result.success, result.error);
       }
     } else if (action === 'closed' && pr.merged) {
-      const emails = await getTargetEmails(repo.team_id, 'pr_merged');
-      if (emails.length > 0) {
-        await emailService.sendPRMergedEmail({
-          to: emails,
+      const targets = await getTargetEmails(repo.team_id, 'pr_merged');
+      for (const target of targets) {
+        const result = await emailService.sendPRMergedEmail({
+          to: [target.email],
           prTitle: pr.title,
           prNumber: payload.number,
           mergedBy: pr.merged_by?.login || pr.user.login,
           githubUrl: pr.html_url,
           devSyncUrl,
         });
+        await logNotification(target.userId, 'pr_merged', `PR Merged #${payload.number}: ${pr.title}`, result.success, result.error);
       }
     } else if (action === 'synchronize') {
-      const emails = await getTargetEmails(repo.team_id, 'pr_updated');
-      if (emails.length > 0) {
-        await emailService.sendPRUpdatedEmail({
-          to: emails,
+      const targets = await getTargetEmails(repo.team_id, 'pr_updated');
+      for (const target of targets) {
+        const result = await emailService.sendPRUpdatedEmail({
+          to: [target.email],
           prTitle: pr.title,
           prNumber: payload.number,
           authorName: pr.user.login,
           githubUrl: pr.html_url,
           devSyncUrl,
         });
+        await logNotification(target.userId, 'pr_updated', `PR Updated #${payload.number}: ${pr.title}`, result.success, result.error);
       }
     }
   } catch (err) {

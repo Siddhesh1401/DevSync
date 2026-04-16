@@ -1,0 +1,103 @@
+.history-page {
+  padding: 1rem;
+}
+
+.history-header {
+  margin-bottom: 2rem;
+}
+
+.back-link {
+  color: #6366f1;
+  text-decoration: none;
+  font-size: 0.9rem;
+  display: inline-block;
+  margin-bottom: 0.5rem;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+.history-header p {
+  color: #94a3b8;
+  margin: 0;
+}
+
+.history-table-container {
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(8px);
+  border: 1px solid #334155;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.history-table th {
+  background: rgba(15, 23, 42, 0.5);
+  padding: 1rem;
+  color: #94a3b8;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #334155;
+}
+
+.history-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #1e293b;
+  color: #e2e8f0;
+  font-size: 0.9rem;
+}
+
+.history-table tr:last-child td {
+  border-bottom: none;
+}
+
+.type-badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.type-pr_created { background: rgba(99, 102, 241, 0.2); color: #818cf8; }
+.type-pr_merged { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+.type-pr_updated { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+
+.status-badge {
+  font-weight: 500;
+  font-size: 0.85rem;
+}
+
+.status-failed { color: #ef4444; }
+.status-sent { color: #10b981; }
+
+.error-text {
+  color: #ef4444;
+  font-size: 0.75rem;
+  margin: 4px 0 0 0;
+}
+
+.empty-history {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: #94a3b8;
+}
+
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.history-loading {
+  text-align: center;
+  padding: 3rem;
+  color: #94a3b8;
+}

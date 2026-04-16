@@ -97,7 +97,19 @@ feat: Phase 1 — Engineering Foundation complete
 
 ---
 
-## [Phase 6] — TBD — Real-Time, Performance, Accessibility
+## [Phase 0-5] — April 2026 — Retroactive Polish & System Audit ✅
+
+### Added
+- **Notification History Page** — Created `NotificationHistoryPage.tsx` and a backend audit ledger (`notification_history`) to track sent and failed emails.
+- **PR Description Rendering** — Enhanced `PRDetailPage.tsx` to display full GitHub descriptions with Markdown support.
+- **PR Metadata Webhook** — Updated webhook handler to ingest `commits_count`, `changed_files_count`, and `body` from GitHub.
+- **Workspace Settings** — Implemented "Edit Workspace" modal in `TeamPage.tsx` with role-based access control.
+- **Auth Hardening** — Integrated password visibility toggles ("Eye" button) in Login, SignUp, and Reset pages.
+- **Bug Fixes** — Resolved critical `TypeError` in TeamPage and shored up database schema consistency.
+
+---
+
+## [Phase 6] — TBD — Real-Time WebSockets & Interaction Upgrades
 
 > _To be filled when Phase 6 is complete._
 

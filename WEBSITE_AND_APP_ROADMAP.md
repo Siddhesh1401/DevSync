@@ -136,23 +136,23 @@ Mobile app development will start after website is complete (Phase 8+).
 
 **SRS References:** [FR3: Email Notification System](srs-project%20overview/SRS_DEVSYNC.md#fr3-email-notification-system)
 
-1. **Settings → Notifications Page** (`/settings/notifications`)
+1. **Settings → Notifications Page** (`/settings/notifications`) ✅
    - Notification type toggles:
-     - [ ] New PR created
-     - [ ] PR merged
-     - [ ] PR updated
+     - [x] New PR created
+     - [x] PR merged
+     - [x] PR updated
      - [ ] Comment on PR
      - [ ] Task assigned
    - Per-type setting: Instant or Daily digest
    - Email address verification status
    - **SRS FR3.3:** Notification Preferences
 
-2. **Settings → Notification History** (`/settings/notification-history`)
+2. **Settings → Notification History** (`/settings/notification-history`) ✅
    - Table: notification type, date sent, status (sent/failed)
-   - Retry button for failed emails
+   - Retroactive audit implementation complete.
    - Clear history button
 
-3. **Email Templates** (sent to users)
+3. **Email Templates** (sent to users) ✅
    - Welcome email (post-signup)
    - PR created email
    - PR merged email

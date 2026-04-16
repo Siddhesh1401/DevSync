@@ -59,4 +59,52 @@ router.post('/pr/:prId', requireAuth, async (req: AuthRequest, res: Response) =>
   }
 });
 
+// PATCH /api/comments/:id
+router.patch('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { content } = req.body;
+
+    if (!content?.trim()) {
+      return res.status(400).json({ success: false, error: { message: 'Comment cannot be empty' } });
+    }
+
+    const { data: current } = await supabase.from('pr_comments').select('author_id').eq('id', id).single();
+    if (!current || current.author_id !== req.user!.id) {
+      return res.status(403).json({ success: false, error: { message: 'Unauthorized to edit this comment' } });
+    }
+
+    const { data: comment, error } = await supabase
+      .from('pr_comments')
+      .update({ content: content.trim() })
+      .eq('id', id)
+      .select('*, author:profiles!pr_comments_author_id_fkey(full_name, avatar_url)')
+      .single();
+
+    if (error) throw error;
+    res.status(200).json({ success: true, data: comment });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: { message: error.message } });
+  }
+});
+
+// DELETE /api/comments/:id
+router.delete('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const { data: current } = await supabase.from('pr_comments').select('author_id').eq('id', id).single();
+    if (!current || current.author_id !== req.user!.id) {
+      return res.status(403).json({ success: false, error: { message: 'Unauthorized to delete this comment' } });
+    }
+
+    const { error } = await supabase.from('pr_comments').delete().eq('id', id);
+
+    if (error) throw error;
+    res.status(200).json({ success: true, data: null });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: { message: error.message } });
+  }
+});
+
 export default router;
