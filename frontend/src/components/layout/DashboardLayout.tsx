@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/index.ts';
+import { useTheme } from '../../context/ThemeContext';
 import './DashboardLayout.css';
 
 interface DashboardLayoutProps {
@@ -10,6 +11,7 @@ interface DashboardLayoutProps {
 
 export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title }) => {
   const { signOut, user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
@@ -101,6 +103,14 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, titl
           </div>
 
           <div className="header-right">
+            <button 
+              className="theme-toggle-btn"
+              onClick={toggleTheme}
+              aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+            >
+              {theme === 'light' ? '🌙' : '☀️'}
+            </button>
+
             <div className="user-menu">
               <button 
                 className="user-btn"

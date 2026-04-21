@@ -40,6 +40,70 @@ router.get('/me', requireAuth, async (req: AuthRequest, res: Response) => {
 });
 
 /**
+ * GET /api/teams/stats
+ * Returns dashboard stats for the current user's team.
+ */
+router.get('/stats', requireAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const teamData = await getUserTeam(req.user!.id);
+    if (!teamData) {
+      return res.status(200).json({ success: true, data: { openPrs: 0, assignedTasks: 0, teamMembers: 0, newMessages: 0 } });
+    }
+
+    const teamId = teamData.team_id;
+
+    // Count open PRs
+    const { count: openPrs, error: prError } = await supabase
+      .from('pull_requests')
+      .select('*', { count: 'exact', head: true })
+      .eq('team_id', teamId)
+      .eq('status', 'open');
+
+    if (prError) throw prError;
+
+    // Count assigned tasks for user
+    const { count: assignedTasks, error: taskError } = await supabase
+      .from('tasks')
+      .select('*', { count: 'exact', head: true })
+      .eq('team_id', teamId)
+      .eq('assigned_user_id', req.user!.id);
+
+    if (taskError) throw taskError;
+
+    // Count team members
+    const { count: teamMembers, error: memberError } = await supabase
+      .from('team_members')
+      .select('*', { count: 'exact', head: true })
+      .eq('team_id', teamId);
+
+    if (memberError) throw memberError;
+
+    // Count new messages (unread comments since last login? For now, total comments today)
+    const today = new Date().toISOString().split('T')[0];
+    const { count: newMessages, error: msgError } = await supabase
+      .from('pr_comments')
+      .select('*', { count: 'exact', head: true })
+      .eq('team_id', teamId)
+      .gte('created_at', today);
+
+    if (msgError) throw msgError;
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        openPrs: openPrs || 0,
+        assignedTasks: assignedTasks || 0,
+        teamMembers: teamMembers || 0,
+        newMessages: newMessages || 0
+      }
+    });
+  } catch (error: any) {
+    console.error('Error fetching stats:', error);
+    return res.status(500).json({ success: false, error: { message: error.message } });
+  }
+});
+
+/**
  * POST /api/teams
  * Creates a new team and adds the creator as owner.
  */

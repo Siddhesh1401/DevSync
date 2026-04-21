@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import './ActivityPage.css';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { useAuth } from '../../hooks';
+import { supabase } from '../../lib/supabase';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -46,6 +47,29 @@ const ActivityPage: React.FC = () => {
       }
     };
     fetchActivity();
+
+    // Subscribe to real-time activity updates
+    const channel = supabase
+      .channel('activity-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'activity_events',
+        },
+        (payload) => {
+          console.log('Activity change:', payload);
+          if (payload.eventType === 'INSERT') {
+            setEvents(prev => [payload.new as ActivityEvent, ...prev]);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [token]);
 
   const formatTime = (isoString: string) => {

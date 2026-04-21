@@ -2,6 +2,7 @@ import React, { useEffect, useState, DragEvent } from 'react';
 import './TasksPage.css';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { useAuth } from '../../hooks';
+import { supabase } from '../../lib/supabase';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -34,6 +35,33 @@ export const TasksPage: React.FC = () => {
   useEffect(() => {
     if (!token) return;
     fetchTasks();
+
+    // Subscribe to real-time task updates
+    const channel = supabase
+      .channel('tasks-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tasks',
+        },
+        (payload) => {
+          console.log('Task change:', payload);
+          if (payload.eventType === 'INSERT') {
+            setTasks(prev => [...prev, payload.new as Task]);
+          } else if (payload.eventType === 'UPDATE') {
+            setTasks(prev => prev.map(t => t.id === payload.new.id ? payload.new as Task : t));
+          } else if (payload.eventType === 'DELETE') {
+            setTasks(prev => prev.filter(t => t.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [token]);
 
   const fetchTasks = async () => {

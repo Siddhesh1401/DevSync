@@ -153,6 +153,26 @@
   gap: 0.75rem;
 }
 
+.theme-toggle-btn {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 1rem;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theme-toggle-btn:hover {
+  border-color: var(--color-primary);
+  background: var(--color-surface-alt);
+}
+
 .user-menu { position: relative; }
 
 .user-btn {

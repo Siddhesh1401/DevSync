@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { useAuth } from '../../hooks';
+import { supabase } from '../../lib/supabase';
 import './PRDetailPage.css';
 
 interface PR {
@@ -95,6 +96,34 @@ export const PRDetailPage: React.FC = () => {
 
     fetchPR();
     fetchComments();
+
+    // Subscribe to real-time comment updates
+    const channel = supabase
+      .channel(`pr-comments-${id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'pr_comments',
+          filter: `pr_id=eq.${id}`,
+        },
+        (payload) => {
+          console.log('Comment change:', payload);
+          if (payload.eventType === 'INSERT') {
+            setComments(prev => [...prev, payload.new as any]);
+          } else if (payload.eventType === 'UPDATE') {
+            setComments(prev => prev.map(c => c.id === payload.new.id ? payload.new as any : c));
+          } else if (payload.eventType === 'DELETE') {
+            setComments(prev => prev.filter(c => c.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [id, token]);
 
   const handlePostComment = async (e: React.FormEvent) => {

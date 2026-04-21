@@ -109,9 +109,25 @@ feat: Phase 1 — Engineering Foundation complete
 
 ---
 
-## [Phase 6] — TBD — Real-Time WebSockets & Interaction Upgrades
+## [Phase 6] — April 2026 — Real-Time WebSockets & Interaction Upgrades ✅
 
-> _To be filled when Phase 6 is complete._
+### Added
+- **Supabase Realtime Integration**: Live updates for PR comments, task status changes, activity feed, and dashboard stats using WebSocket subscriptions.
+- **Dark Mode Toggle**: Manual theme switcher in dashboard header with localStorage persistence and system preference fallback.
+- **Theme Context**: React context for theme management across the app.
+- **Light Theme CSS**: Complete light theme variables for data-theme="light" attribute.
+- **Real-Time Dashboard Stats**: Dynamic fetching of open PRs, assigned tasks, team members, and new messages with live updates.
+- **Accessibility Improvements**: ARIA labels on theme toggle, semantic HTML structure, keyboard navigation support.
+- **Performance Optimizations**: Efficient real-time subscriptions with proper cleanup, reduced re-renders.
+
+### Verified
+- ✅ Real-time comment updates in PR details
+- ✅ Live task status changes in Kanban board
+- ✅ Instant activity feed updates
+- ✅ Dashboard stats refresh on data changes
+- ✅ Dark/light mode toggle with persistence
+- ✅ Responsive design maintained
+- ✅ No performance degradation from subscriptions
 
 ---
 
