@@ -16,5 +16,12 @@
   "bugs": {
     "url": "https://github.com/Siddhesh1401/DevSync/issues"
   },
-  "homepage": "https://github.com/Siddhesh1401/DevSync#readme"
+  "homepage": "https://github.com/Siddhesh1401/DevSync#readme",
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/supertest": "^7.2.0",
+    "jest": "^30.3.0",
+    "supertest": "^7.2.2",
+    "ts-jest": "^29.4.9"
+  }
 }

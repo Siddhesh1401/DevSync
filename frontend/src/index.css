@@ -67,7 +67,9 @@
   --color-merged-bg:   rgba(163, 113, 247, 0.12);
   --color-closed-bg:   rgba(139, 148, 158, 0.12);
 }
-  --space-1: 0.25rem;
+
+/* ─── Design Tokens ─────────────────────────────────────────── */
+:root {
   --space-2: 0.5rem;
   --space-3: 0.75rem;
   --space-4: 1rem;

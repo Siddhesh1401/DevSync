@@ -1,4 +1,5 @@
 import { Router, Response } from 'express';
+import { body, validationResult } from 'express-validator';
 import { supabase } from '../config/supabase';
 import { requireAuth, AuthRequest } from '../middleware/auth';
 
@@ -107,34 +108,50 @@ router.get('/stats', requireAuth, async (req: AuthRequest, res: Response) => {
  * POST /api/teams
  * Creates a new team and adds the creator as owner.
  */
-router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
-  try {
-    const { name, description } = req.body;
+router.post('/', 
+  requireAuth,
+  [
+    body('name')
+      .trim()
+      .isLength({ min: 1, max: 100 })
+      .withMessage('Team name must be 1-100 characters')
+      .matches(/^[a-zA-Z0-9\s\-_]+$/)
+      .withMessage('Team name can only contain letters, numbers, spaces, hyphens, and underscores'),
+    body('description')
+      .optional()
+      .trim()
+      .isLength({ max: 500 })
+      .withMessage('Description must be less than 500 characters')
+  ],
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          error: { message: 'Validation failed', details: errors.array() }
+        });
+      }
 
-    if (!name?.trim()) {
-      return res.status(400).json({
-        success: false,
-        error: { message: 'Team name is required' },
-      });
-    }
+      const { name, description } = req.body;
 
-    // Ensure user has a profile row (auto-created by trigger, but just in case)
-    await supabase
-      .from('profiles')
-      .upsert({ id: req.user!.id }, { onConflict: 'id' });
+      // Ensure user has a profile row (auto-created by trigger, but just in case)
+      await supabase
+        .from('profiles')
+        .upsert({ id: req.user!.id }, { onConflict: 'id' });
 
-    // Create the team
-    const { data: team, error: teamError } = await supabase
-      .from('teams')
-      .insert({
-        name: name.trim(),
-        description: description?.trim() || null,
-        owner_id: req.user!.id,
-      })
-      .select()
-      .single();
+      // Create the team
+      const { data: team, error: teamError } = await supabase
+        .from('teams')
+        .insert({
+          name: name.trim(),
+          description: description?.trim() || null,
+          owner_id: req.user!.id,
+        })
+        .select()
+        .single();
 
-    if (teamError) throw teamError;
+      if (teamError) throw teamError;
 
     // Add creator as owner member
     const { error: memberError } = await supabase

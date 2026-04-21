@@ -14,14 +14,14 @@ interface Stats {
 }
 
 export const Dashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { session, user } = useAuth();
   const [stats, setStats] = useState<Stats>({ openPrs: 0, assignedTasks: 0, teamMembers: 0, newMessages: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const token = user?.session?.access_token;
+        const token = session?.access_token;
         if (!token) return;
 
         const res = await fetch(`${API}/api/teams/stats`, {
