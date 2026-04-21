@@ -10,6 +10,7 @@ import { SignUpPage } from './pages/auth/SignUpPage';
 import { VerifyEmailPage } from './pages/auth/VerifyEmailPage';
 import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage';
 import { ResetPasswordPage } from './pages/auth/ResetPasswordPage';
+import { AcceptInvitePage } from './pages/auth/AcceptInvitePage';
 
 // Phase 2 — Dashboard & Profile
 import { Dashboard } from './pages/dashboard/Dashboard';
@@ -40,6 +41,7 @@ function App() {
           <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/accept-invite" element={<ProtectedRoute><AcceptInvitePage /></ProtectedRoute>} />
 
           {/* ── Protected (Phase 2) ── */}
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

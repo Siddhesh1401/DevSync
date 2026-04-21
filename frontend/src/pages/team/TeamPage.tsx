@@ -29,7 +29,10 @@ export const TeamPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   const [isEditingTeam, setIsEditingTeam] = useState(false);
+  const [isInviting, setIsInviting] = useState(false);
   const [teamForm, setTeamForm] = useState({ name: '', description: '' });
+  const [inviteForm, setInviteForm] = useState({ email: '', role: 'member' });
+  const [inviteMessage, setInviteMessage] = useState('');
 
   const { session } = useAuth();
   const token = session?.access_token;
@@ -106,6 +109,34 @@ export const TeamPage: React.FC = () => {
     } catch (err) { console.error(err); }
   };
 
+  const handleInviteSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setInviteMessage('');
+    
+    try {
+      const res = await fetch(`${API_URL}/api/teams/members/invite`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: inviteForm.email, role: inviteForm.role })
+      });
+      const json = await res.json();
+      
+      if (json.success) {
+        setInviteMessage(`✅ Invitation sent to ${inviteForm.email}!`);
+        setInviteForm({ email: '', role: 'member' });
+        setTimeout(() => {
+          setIsInviting(false);
+          setInviteMessage('');
+        }, 2000);
+      } else {
+        setInviteMessage(`❌ ${json.error?.message || 'Failed to send invitation'}`);
+      }
+    } catch (err) {
+      setInviteMessage(`❌ Error sending invitation`);
+      console.error(err);
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="team-container fade-in">
@@ -116,7 +147,7 @@ export const TeamPage: React.FC = () => {
           </div>
           <button 
             className="btn-primary" 
-            onClick={() => alert("Team Member Invites require an SMTP Mail Server and a live web address. This feature will be formally unlocked during Phase 8: Final Deployment!")}
+            onClick={() => setIsInviting(true)}
           >
             Invite Member
           </button>
@@ -189,7 +220,7 @@ export const TeamPage: React.FC = () => {
               ))}
             </div>
             
-            {/* Modal */}
+            {/* Edit Team Modal */}
             {isEditingTeam && (
               <div className="modal-overlay" style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 100 }}>
                 <div className="modal-content" style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '12px', padding: '2rem', width: '100%', maxWidth: '400px' }}>
@@ -217,6 +248,48 @@ export const TeamPage: React.FC = () => {
                     <div className="modal-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '1rem' }}>
                       <button type="button" className="btn-secondary" onClick={() => setIsEditingTeam(false)}>Cancel</button>
                       <button type="submit" className="btn-primary">Save Changes</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {/* Invite Member Modal */}
+            {isInviting && (
+              <div className="modal-overlay" style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 100 }}>
+                <div className="modal-content" style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '12px', padding: '2rem', width: '100%', maxWidth: '400px' }}>
+                  <h2 style={{ marginTop: 0 }}>Invite Member</h2>
+                  <form onSubmit={handleInviteSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div className="form-group">
+                      <label style={{ display: 'block', marginBottom: '0.5rem', color: '#94a3b8' }}>Email Address</label>
+                      <input 
+                        type="email" 
+                        required 
+                        placeholder="member@example.com"
+                        value={inviteForm.email} 
+                        onChange={e => setInviteForm({...inviteForm, email: e.target.value})} 
+                        style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #334155', background: '#0f172a', color: 'white' }}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label style={{ display: 'block', marginBottom: '0.5rem', color: '#94a3b8' }}>Role</label>
+                      <select 
+                        value={inviteForm.role} 
+                        onChange={e => setInviteForm({...inviteForm, role: e.target.value})} 
+                        style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #334155', background: '#0f172a', color: 'white' }}
+                      >
+                        <option value="member">Member</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </div>
+                    {inviteMessage && (
+                      <div style={{ padding: '0.75rem', borderRadius: '8px', background: inviteMessage.includes('✅') ? '#1e3a1f' : '#3a1f1f', color: inviteMessage.includes('✅') ? '#86efac' : '#fca5a5', fontSize: '0.875rem' }}>
+                        {inviteMessage}
+                      </div>
+                    )}
+                    <div className="modal-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '1rem' }}>
+                      <button type="button" className="btn-secondary" onClick={() => setIsInviting(false)}>Cancel</button>
+                      <button type="submit" className="btn-primary" disabled={!inviteForm.email}>Send Invite</button>
                     </div>
                   </form>
                 </div>
