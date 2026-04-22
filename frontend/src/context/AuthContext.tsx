@@ -37,6 +37,27 @@ const normalizeAuthError = (error: unknown): Error => {
   if (error instanceof Error && error.message === 'Failed to fetch') {
     return new Error(supabaseConfigErrorMessage);
   }
+
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase();
+
+    if (message.includes('invalid login credentials')) {
+      return new Error('Invalid email or password. If you just signed up, verify your email first.');
+    }
+
+    if (message.includes('email not confirmed') || message.includes('email not verified')) {
+      return new Error('Email is not verified. Please verify your email, then sign in again.');
+    }
+
+    if (message.includes('user already registered')) {
+      return new Error('This email is already registered. Please sign in instead.');
+    }
+
+    if (message.includes('too many requests')) {
+      return new Error('Too many attempts. Please wait a minute and try again.');
+    }
+  }
+
   if (error instanceof Error) {
     return error;
   }
