@@ -55,51 +55,77 @@ router.get('/stats', requireAuth, async (req: AuthRequest, res: Response) => {
 
     const teamId = teamData.team_id;
 
-    // Count open PRs
-    const { count: openPrs, error: prError } = await supabase
+    // Count open PRs (fallback to 0 on non-critical query errors)
+    let openPrs = 0;
+    const { count: openPrCount, error: prError } = await supabase
       .from('pull_requests')
       .select('*', { count: 'exact', head: true })
       .eq('team_id', teamId)
       .eq('status', 'open');
+    if (prError) {
+      console.warn('Stats warning (open PRs):', prError.message);
+    } else {
+      openPrs = openPrCount || 0;
+    }
 
-    if (prError) throw prError;
-
-    // Count assigned tasks for user
-    const { count: assignedTasks, error: taskError } = await supabase
+    // Count assigned tasks for user (supports both assigned_to and assigned_user_id)
+    let assignedTasks = 0;
+    const assignedToQuery = await supabase
       .from('tasks')
       .select('*', { count: 'exact', head: true })
       .eq('team_id', teamId)
       .eq('assigned_to', req.user!.id);
 
-    if (taskError) throw taskError;
+    if (assignedToQuery.error) {
+      const legacyAssignedQuery = await supabase
+        .from('tasks')
+        .select('*', { count: 'exact', head: true })
+        .eq('team_id', teamId)
+        .eq('assigned_user_id', req.user!.id as any);
+
+      if (legacyAssignedQuery.error) {
+        console.warn('Stats warning (assigned tasks):', legacyAssignedQuery.error.message);
+      } else {
+        assignedTasks = legacyAssignedQuery.count || 0;
+      }
+    } else {
+      assignedTasks = assignedToQuery.count || 0;
+    }
 
     // Count team members
-    const { count: teamMembers, error: memberError } = await supabase
+    let teamMembers = 0;
+    const { count: teamMemberCount, error: memberError } = await supabase
       .from('team_members')
       .select('*', { count: 'exact', head: true })
       .eq('team_id', teamId);
+    if (memberError) {
+      console.warn('Stats warning (team members):', memberError.message);
+    } else {
+      teamMembers = teamMemberCount || 0;
+    }
 
-    if (memberError) throw memberError;
-
-    // Count new messages from today's comment activity.
-    // We use activity_events because pr_comments does not include team_id.
+    // Count today's new messages from activity events; fallback to 0
+    let newMessages = 0;
     const today = new Date().toISOString().split('T')[0];
-    const { count: newMessages, error: msgError } = await supabase
+    const { count: msgCount, error: msgError } = await supabase
       .from('activity_events')
       .select('*', { count: 'exact', head: true })
       .eq('team_id', teamId)
       .eq('event_type', 'comment_added')
       .gte('created_at', today);
-
-    if (msgError) throw msgError;
+    if (msgError) {
+      console.warn('Stats warning (new messages):', msgError.message);
+    } else {
+      newMessages = msgCount || 0;
+    }
 
     return res.status(200).json({
       success: true,
       data: {
-        openPrs: openPrs || 0,
-        assignedTasks: assignedTasks || 0,
-        teamMembers: teamMembers || 0,
-        newMessages: newMessages || 0
+        openPrs,
+        assignedTasks,
+        teamMembers,
+        newMessages
       }
     });
   } catch (error: any) {
