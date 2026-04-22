@@ -144,6 +144,55 @@ See [WEBSITE_AND_APP_ROADMAP.md](WEBSITE_AND_APP_ROADMAP.md) for the full phase-
 
 ---
 
+## Phase 8 Deployment (Vercel + Render + Supabase)
+
+This project is set up to deploy with:
+- Frontend: Vercel
+- Backend: Render
+- Database/Auth/Realtime: Supabase
+
+### Step 1: Deploy Backend on Render
+
+1. Push this repository to GitHub.
+2. In Render, create a new Blueprint and select this repo.
+3. Render will detect `render.yaml` and create `devsync-backend`.
+4. In Render service environment variables, set:
+   - `FRONTEND_URL` (your Vercel app URL)
+   - `SUPABASE_URL`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `GITHUB_WEBHOOK_SECRET`
+   - `GMAIL_USER`
+   - `GMAIL_PASS`
+5. Confirm health check passes at `/api/health`.
+
+### Step 2: Deploy Frontend on Vercel
+
+1. In Vercel, import this repository.
+2. Set Root Directory to `frontend`.
+3. Vercel will use `frontend/vercel.json` and build with `npm run build`.
+4. Add environment variables in Vercel project settings:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+   - `VITE_API_URL` (your Render backend URL)
+5. Deploy and verify app loads.
+
+### Step 3: Cross-Origin and Webhook Finalization
+
+1. Update Render `FRONTEND_URL` with final Vercel domain.
+2. In GitHub webhook settings, set payload URL to:
+   - `https://<render-service-domain>/api/webhook/github`
+3. Re-test webhook delivery from GitHub.
+
+### Step 4: Production Smoke Test
+
+1. Backend health endpoint responds 200.
+2. Login/signup works with Supabase.
+3. Team invite sends email.
+4. GitHub webhook creates or updates PR entries.
+5. Realtime dashboard updates still work.
+
+---
+
 ## Questions?
 
 Read the [SRS Document](srs-project%20overview/SRS_DEVSYNC.md) for full technical requirements.

@@ -301,6 +301,9 @@ Mobile app development will start after website is complete (Phase 8+).
 ## Phase 8 (Week 13): Website Launch
 
 ### Website Launch to Production
+- Frontend deployment on Vercel
+- Backend deployment on Render
+- Supabase used as managed database/auth/realtime in production
 - Released to production
 - User onboarding email
 - Support documentation
