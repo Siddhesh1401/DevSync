@@ -506,22 +506,17 @@ router.post('/members/accept',
         return res.status(400).json({ success: false, error: { message: 'Invitation has expired' } });
       }
 
-      // Get user profile
-      const { data: profile, error: profileError } = await supabase
+      // Ensure profile row exists for this authenticated user
+      await supabase
         .from('profiles')
-        .select('id, email')
-        .eq('id', req.user.id)
-        .single();
+        .upsert({ id: req.user.id }, { onConflict: 'id' });
 
-      if (profileError || !profile) {
-        return res.status(400).json({ success: false, error: { message: 'User profile not found' } });
-      }
-
-      // Check email matches
-      if (profile.email?.toLowerCase() !== invite.email?.toLowerCase()) {
+      // Check invited email against authenticated email from JWT
+      const authEmail = req.user.email?.toLowerCase();
+      if (!authEmail || authEmail !== invite.email?.toLowerCase()) {
         return res.status(400).json({
           success: false,
-          error: { message: `This invitation is for ${invite.email}, but you're logged in as ${profile.email}` }
+          error: { message: `This invitation is for ${invite.email}, but you're logged in as ${req.user.email || 'an unknown email'}` }
         });
       }
 
