@@ -6,13 +6,11 @@ services:
     plan: free
     autoDeploy: true
     buildCommand: npm ci --include=dev && npm run build
-    startCommand: npm start
+    startCommand: NODE_ENV=production npm start
     healthCheckPath: /api/health
     envVars:
       - key: NODE_VERSION
         value: 20
-      - key: NODE_ENV
-        value: production
       - key: FRONTEND_URL
         sync: false
       - key: SUPABASE_URL
