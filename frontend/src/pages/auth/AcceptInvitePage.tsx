@@ -41,7 +41,7 @@ export const AcceptInvitePage: React.FC = () => {
           setStatus('success');
           setMessage(`✅ Welcome! You've joined the team.`);
           setTimeout(() => {
-            navigate(`/teams/${json.data.teamId}/dashboard`);
+            navigate('/dashboard');
           }, 2000);
         } else {
           setStatus('error');

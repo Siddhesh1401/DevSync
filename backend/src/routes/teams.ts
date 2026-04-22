@@ -464,6 +464,7 @@ router.post('/members/invite',
  * Accept an invitation token and join a team
  */
 router.post('/members/accept',
+  requireAuth,
   [
     body('inviteToken')
       .trim()
