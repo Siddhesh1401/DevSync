@@ -69,7 +69,7 @@ router.get('/stats', requireAuth, async (req: AuthRequest, res: Response) => {
       .from('tasks')
       .select('*', { count: 'exact', head: true })
       .eq('team_id', teamId)
-      .eq('assigned_user_id', req.user!.id);
+      .eq('assigned_to', req.user!.id);
 
     if (taskError) throw taskError;
 
@@ -81,12 +81,14 @@ router.get('/stats', requireAuth, async (req: AuthRequest, res: Response) => {
 
     if (memberError) throw memberError;
 
-    // Count new messages (unread comments since last login? For now, total comments today)
+    // Count new messages from today's comment activity.
+    // We use activity_events because pr_comments does not include team_id.
     const today = new Date().toISOString().split('T')[0];
     const { count: newMessages, error: msgError } = await supabase
-      .from('pr_comments')
+      .from('activity_events')
       .select('*', { count: 'exact', head: true })
       .eq('team_id', teamId)
+      .eq('event_type', 'comment_added')
       .gte('created_at', today);
 
     if (msgError) throw msgError;
