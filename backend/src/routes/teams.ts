@@ -1,5 +1,6 @@
 import { Router, Response } from 'express';
 import { body, validationResult } from 'express-validator';
+import { randomBytes } from 'crypto';
 import { supabase } from '../config/supabase';
 import { env } from '../config/env';
 import { emailService } from '../services/emailService';
@@ -19,6 +20,46 @@ const getUserTeam = async (userId: string) => {
 
   if (error) return null;
   return data;
+};
+
+const sendTeamInviteEmail = async (params: {
+  inviteEmail: string;
+  inviteToken: string;
+  teamName: string;
+}) => {
+  const inviteLink = `${env.frontendUrl}/accept-invite?token=${params.inviteToken}`;
+  await emailService.sendEmail({
+    to: params.inviteEmail,
+    subject: `Invitation to join ${params.teamName} on DevSync`,
+    html: `
+<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+  <h2 style="color: #6366f1;">🎉 You're Invited to ${params.teamName}</h2>
+  <p>Hi there,</p>
+  <p>You've been invited to join the team <strong>${params.teamName}</strong> on DevSync!</p>
+
+  <div style="background: #f8f8f8; padding: 16px; border-radius: 8px; margin: 16px 0;">
+    <p>Click the button below to accept the invitation:</p>
+    <a href="${inviteLink}" style="display: inline-block; background: #6366f1; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;">
+      Accept Invitation
+    </a>
+  </div>
+
+  <p style="color: #666; font-size: 14px;">
+    Or copy and paste this link in your browser:<br/>
+    <code style="background: #f0f0f0; padding: 4px 8px; border-radius: 4px;">${inviteLink}</code>
+  </p>
+
+  <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
+  <p style="color: #888; font-size: 12px;">
+    This invitation expires in <strong>7 days</strong>. If you didn't expect this, you can safely ignore this email.
+  </p>
+  <p style="color: #888; font-size: 12px;">
+    Best regards,<br/>
+    The DevSync Team
+  </p>
+</div>
+    `
+  });
 };
 
 // ─── Routes ──────────────────────────────────────────────────────────────────
@@ -401,42 +442,13 @@ router.post('/members/invite',
 
       if (inviteError) throw inviteError;
 
-      // Send invite email
-      const inviteLink = `${env.frontendUrl}/accept-invite?token=${invite.invite_token}`;
       const teamName = (teamData.teams as any)?.name || 'your team';
 
       try {
-        await emailService.sendEmail({
-          to: email,
-          subject: `Invitation to join ${teamName} on DevSync`,
-          html: `
-<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-  <h2 style="color: #6366f1;">🎉 You're Invited to ${teamName}</h2>
-  <p>Hi there,</p>
-  <p>You've been invited to join the team <strong>${teamName}</strong> on DevSync!</p>
-  
-  <div style="background: #f8f8f8; padding: 16px; border-radius: 8px; margin: 16px 0;">
-    <p>Click the button below to accept the invitation:</p>
-    <a href="${inviteLink}" style="display: inline-block; background: #6366f1; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;">
-      Accept Invitation
-    </a>
-  </div>
-
-  <p style="color: #666; font-size: 14px;">
-    Or copy and paste this link in your browser:<br/>
-    <code style="background: #f0f0f0; padding: 4px 8px; border-radius: 4px;">${inviteLink}</code>
-  </p>
-
-  <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
-  <p style="color: #888; font-size: 12px;">
-    This invitation expires in <strong>7 days</strong>. If you didn't expect this, you can safely ignore this email.
-  </p>
-  <p style="color: #888; font-size: 12px;">
-    Best regards,<br/>
-    The DevSync Team
-  </p>
-</div>
-          `
+        await sendTeamInviteEmail({
+          inviteEmail: email,
+          inviteToken: invite.invite_token,
+          teamName,
         });
       } catch (emailError) {
         console.error('Failed to send invite email:', emailError);
@@ -570,7 +582,7 @@ router.get('/invites', requireAuth, async (req: AuthRequest, res: Response) => {
 
     const { data: invites, error } = await supabase
       .from('team_invites')
-      .select('*')
+      .select('id, email, role, invited_by, expires_at, created_at, is_used')
       .eq('team_id', teamData.team_id)
       .eq('is_used', false)
       .gt('expires_at', new Date().toISOString())
@@ -579,6 +591,109 @@ router.get('/invites', requireAuth, async (req: AuthRequest, res: Response) => {
     if (error) throw error;
 
     return res.status(200).json({ success: true, data: invites });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: { message: error.message } });
+  }
+});
+
+/**
+ * POST /api/teams/invites/:inviteId/resend
+ * Resend a pending invite email (admin only). If expired, rotates token and extends expiry.
+ */
+router.post('/invites/:inviteId/resend', requireAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const { inviteId } = req.params;
+
+    const teamData = await getUserTeam(req.user!.id);
+    if (!teamData) {
+      return res.status(404).json({ success: false, error: { message: 'No team found' } });
+    }
+
+    if (teamData.role !== 'owner' && teamData.role !== 'admin') {
+      return res.status(403).json({ success: false, error: { message: 'Must be admin to resend invites' } });
+    }
+
+    const { data: invite, error: inviteError } = await supabase
+      .from('team_invites')
+      .select('*')
+      .eq('id', inviteId)
+      .eq('team_id', teamData.team_id)
+      .single();
+
+    if (inviteError || !invite) {
+      return res.status(404).json({ success: false, error: { message: 'Invite not found' } });
+    }
+
+    if (invite.is_used) {
+      return res.status(400).json({ success: false, error: { message: 'Cannot resend an already used invite' } });
+    }
+
+    let inviteToSend = invite;
+    if (new Date(invite.expires_at) < new Date()) {
+      const refreshedToken = randomBytes(32).toString('hex');
+      const refreshedExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+      const { data: refreshedInvite, error: refreshError } = await supabase
+        .from('team_invites')
+        .update({ invite_token: refreshedToken, expires_at: refreshedExpiresAt, is_used: false })
+        .eq('id', invite.id)
+        .select()
+        .single();
+
+      if (refreshError || !refreshedInvite) {
+        throw refreshError || new Error('Failed to refresh expired invite');
+      }
+      inviteToSend = refreshedInvite;
+    }
+
+    const teamName = (teamData.teams as any)?.name || 'your team';
+    await sendTeamInviteEmail({
+      inviteEmail: inviteToSend.email,
+      inviteToken: inviteToSend.invite_token,
+      teamName,
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        id: inviteToSend.id,
+        email: inviteToSend.email,
+        role: inviteToSend.role,
+        expiresAt: inviteToSend.expires_at,
+      },
+    });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: { message: error.message } });
+  }
+});
+
+/**
+ * DELETE /api/teams/invites/:inviteId
+ * Revoke/cancel a pending invite (admin only)
+ */
+router.delete('/invites/:inviteId', requireAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const { inviteId } = req.params;
+
+    const teamData = await getUserTeam(req.user!.id);
+    if (!teamData) {
+      return res.status(404).json({ success: false, error: { message: 'No team found' } });
+    }
+
+    if (teamData.role !== 'owner' && teamData.role !== 'admin') {
+      return res.status(403).json({ success: false, error: { message: 'Must be admin to revoke invites' } });
+    }
+
+    const { error } = await supabase
+      .from('team_invites')
+      .delete()
+      .eq('id', inviteId)
+      .eq('team_id', teamData.team_id)
+      .eq('is_used', false);
+
+    if (error) throw error;
+
+    return res.status(200).json({ success: true, data: null });
   } catch (error: any) {
     return res.status(500).json({ success: false, error: { message: error.message } });
   }

@@ -24,9 +24,21 @@ interface TeamInfo {
   members: TeamMember[];
 }
 
+interface PendingInvite {
+  id: string;
+  email: string;
+  role: 'member' | 'admin';
+  invited_by: string | null;
+  expires_at: string;
+  created_at: string;
+  is_used: boolean;
+}
+
 export const TeamPage: React.FC = () => {
   const [team, setTeam] = useState<TeamInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
+  const [loadingInvites, setLoadingInvites] = useState(false);
 
   const [isEditingTeam, setIsEditingTeam] = useState(false);
   const [isInviting, setIsInviting] = useState(false);
@@ -40,6 +52,7 @@ export const TeamPage: React.FC = () => {
   useEffect(() => {
     if (!token) return;
     fetchTeamMembers();
+    fetchPendingInvites();
   }, [token]);
 
   const fetchTeamMembers = async () => {
@@ -124,6 +137,7 @@ export const TeamPage: React.FC = () => {
       if (json.success) {
         setInviteMessage(`✅ Invitation sent to ${inviteForm.email}!`);
         setInviteForm({ email: '', role: 'member' });
+        fetchPendingInvites();
         setTimeout(() => {
           setIsInviting(false);
           setInviteMessage('');
@@ -136,6 +150,65 @@ export const TeamPage: React.FC = () => {
       console.error(err);
     }
   };
+
+  const fetchPendingInvites = async () => {
+    setLoadingInvites(true);
+    try {
+      const res = await fetch(`${API_URL}/api/teams/invites`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const json = await res.json();
+      if (json.success) {
+        setPendingInvites(json.data || []);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingInvites(false);
+    }
+  };
+
+  const handleResendInvite = async (inviteId: string) => {
+    try {
+      const res = await fetch(`${API_URL}/api/teams/invites/${inviteId}/resend`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const json = await res.json();
+      if (!json.success) {
+        alert(json.error?.message || 'Failed to resend invite');
+        return;
+      }
+      alert('Invite resent successfully');
+      fetchPendingInvites();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to resend invite');
+    }
+  };
+
+  const handleRevokeInvite = async (inviteId: string) => {
+    if (!window.confirm('Revoke this invite?')) return;
+
+    try {
+      const res = await fetch(`${API_URL}/api/teams/invites/${inviteId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const json = await res.json();
+      if (!json.success) {
+        alert(json.error?.message || 'Failed to revoke invite');
+        return;
+      }
+      fetchPendingInvites();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to revoke invite');
+    }
+  };
+
+  const currentUserRole = team?.members?.find(m => m.profile.email === session?.user?.email)?.role;
+  const canManageInvites = currentUserRole === 'owner' || currentUserRole === 'admin';
 
   return (
     <DashboardLayout>
@@ -165,7 +238,7 @@ export const TeamPage: React.FC = () => {
             <div className="team-card-header" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <h2>{team.name}</h2>
               <span className="badge">Active Workspace</span>
-              {team.members?.find(m => m.profile.email === session?.user?.email)?.role !== 'member' && (
+              {currentUserRole !== 'member' && (
                 <button 
                   className="btn-ghost-sm" 
                   onClick={() => {
@@ -219,6 +292,47 @@ export const TeamPage: React.FC = () => {
                 </div>
               ))}
             </div>
+
+            {canManageInvites && (
+              <>
+                <h3 className="section-title" style={{ marginTop: '24px' }}>Pending Invites</h3>
+                {loadingInvites ? (
+                  <div style={{ color: '#94a3b8' }}>Loading pending invites...</div>
+                ) : pendingInvites.length === 0 ? (
+                  <div style={{ color: '#94a3b8', fontSize: '14px' }}>No pending invites.</div>
+                ) : (
+                  <div className="members-list">
+                    {pendingInvites.map(invite => (
+                      <div key={invite.id} className="member-row">
+                        <div className="member-identity">
+                          <div className="member-avatar">📨</div>
+                          <div className="member-info">
+                            <h4>{invite.email}</h4>
+                            <p>
+                              Role: {invite.role} · Sent {new Date(invite.created_at).toLocaleDateString()} · Expires {new Date(invite.expires_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="member-meta" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <button
+                            style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #334155', background: '#1f2937', color: '#e5e7eb', cursor: 'pointer', fontSize: '12px' }}
+                            onClick={() => handleResendInvite(invite.id)}
+                          >
+                            Resend
+                          </button>
+                          <button
+                            style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #7f1d1d', background: '#3f1d1d', color: '#fca5a5', cursor: 'pointer', fontSize: '12px' }}
+                            onClick={() => handleRevokeInvite(invite.id)}
+                          >
+                            Revoke
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
             
             {/* Edit Team Modal */}
             {isEditingTeam && (
