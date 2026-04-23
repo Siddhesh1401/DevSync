@@ -19,6 +19,23 @@ const normalizeFrontendUrl = (rawUrl?: string): string => {
   }
 };
 
+const normalizeBackendUrl = (rawUrl?: string, port = 3001): string => {
+  const fallback = `http://localhost:${port}`;
+  if (!rawUrl || !rawUrl.trim()) return fallback;
+
+  const trimmed = rawUrl.trim();
+  const withProtocol = /^https?:\/\//i.test(trimmed)
+    ? trimmed
+    : (process.env.NODE_ENV === 'production' ? `https://${trimmed}` : `http://${trimmed}`);
+
+  try {
+    const parsed = new URL(withProtocol);
+    return parsed.origin;
+  } catch {
+    return fallback;
+  }
+};
+
 const requiredVars = [
   'SUPABASE_URL',
   'SUPABASE_SERVICE_ROLE_KEY',
@@ -43,5 +60,6 @@ export const env = {
   gmailUser: process.env.GMAIL_USER || '',
   gmailPass: process.env.GMAIL_PASS || '',
   frontendUrl: normalizeFrontendUrl(process.env.FRONTEND_URL),
+  backendPublicUrl: normalizeBackendUrl(process.env.BACKEND_PUBLIC_URL, parseInt(process.env.PORT || '3001', 10)),
   isDev: process.env.NODE_ENV !== 'production',
 };

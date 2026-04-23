@@ -13,6 +13,7 @@ interface Repo {
   id: string;
   github_repo_name: string;
   github_repo_url: string;
+  webhook_secret?: string;
   is_connected: boolean;
   connected_at: string | null;
   created_at: string;
@@ -220,7 +221,7 @@ export const ReposPage: React.FC = () => {
                         </button>
                       </div>
                       <div style={{ fontSize: '12px', color: '#8d96a0', marginTop: '4px' }}>
-                        * Note: If running locally, replace <code>{API}</code> with your ngrok URL.
+                        * Use this exact URL in GitHub Webhook Payload URL.
                       </div>
                     </div>
                   </div>
@@ -309,7 +310,11 @@ export const ReposPage: React.FC = () => {
                       {!repo.is_connected && (
                         <button 
                           className="btn-secondary btn-sm"
-                          onClick={() => setNewRepo({ ...repo, webhook_url: `${API}/api/webhook/github`, webhook_secret: 'devsync-secret-123' })}
+                          onClick={() => setNewRepo({
+                            ...repo,
+                            webhook_url: `${API}/api/webhook/github`,
+                            webhook_secret: repo.webhook_secret || ''
+                          })}
                         >
                           Setup Instructions
                         </button>

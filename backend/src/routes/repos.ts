@@ -109,9 +109,8 @@ router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
 
     if (error) throw error;
 
-    // Build the webhook URL pointing to this backend
-    const backendUrl = `http://localhost:${env.port}`;
-    const webhookUrl = `${backendUrl}/api/webhook/github`;
+    // Build the webhook URL pointing to this backend (production-safe)
+    const webhookUrl = `${env.backendPublicUrl}/api/webhook/github`;
 
     return res.status(201).json({
       success: true,
